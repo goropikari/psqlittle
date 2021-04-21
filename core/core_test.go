@@ -2,6 +2,8 @@ package core
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreate(t *testing.T) {
@@ -12,32 +14,20 @@ func TestCreate(t *testing.T) {
 		name           string
 		givenDB        *DB
 		givenTableName string
-		givenSchema    TableSchema
-		wantedSchema   TableSchema
+		givenColNames  ColNames
+		wantedColNames ColNames
 	}{
 		{
 			name:           "test create table",
 			givenDB:        db,
 			givenTableName: "hoge",
-			givenSchema: TableSchema{
-				ColNames: ColNames{
-					ColName{"hoge", "id"},
-					ColName{"hoge", "name"},
-				},
-				ColTypes: ColTypes{
-					ColType("int"),
-					ColType("varchar"),
-				},
+			givenColNames: ColNames{
+				ColName{"hoge", "id", "int"},
+				ColName{"hoge", "name", "varchar"},
 			},
-			wantedSchema: TableSchema{
-				ColNames: ColNames{
-					ColName{"hoge", "id"},
-					ColName{"hoge", "name"},
-				},
-				ColTypes: ColTypes{
-					ColType("int"),
-					ColType("varchar"),
-				},
+			wantedColNames: ColNames{
+				ColName{"hoge", "id", "int"},
+				ColName{"hoge", "name", "varchar"},
 			},
 		},
 	}
@@ -45,18 +35,26 @@ func TestCreate(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			db.CreateTable(tt.givenTableName, tt.givenSchema)
+			db.CreateTable(tt.givenTableName, tt.givenColNames)
 
-			actualSchema := db.Tables[tt.givenTableName].Schema
+			actualColNames := db.Tables[tt.givenTableName].ColNames
 
-			if !actualSchema.Equal(tt.wantedSchema) {
-				t.Errorf("expected %v, actual %v", tt.wantedSchema, actualSchema)
+			if !actualColNames.Equal(tt.wantedColNames) {
+				t.Errorf("expected %v, actual %v", tt.wantedColNames, actualColNames)
 			}
 		})
 	}
 }
 
 func TestInsert(t *testing.T) {
+
+	table := Table{
+		ColNames: []ColName{
+			{"hoge", "id", "int"},
+			{"hoge", "name", "varchar"},
+		},
+		Rows: []Row{},
+	}
 
 	var tests = []struct {
 		name          string
@@ -66,11 +64,12 @@ func TestInsert(t *testing.T) {
 		givenValsList ValuesList
 	}{
 		{
-			name: "test insert",
+			name:  "test insert",
+			given: table,
 			expected: Table{
 				ColNames: []ColName{
-					{"hoge", "id"},
-					{"hoge", "name"},
+					{"hoge", "id", "int"},
+					{"hoge", "name", "varchar"},
 				},
 				Rows: []Row{
 					{
@@ -78,46 +77,12 @@ func TestInsert(t *testing.T) {
 					},
 					{
 						Values{2, "hanako"},
-					},
-				},
-				Schema: TableSchema{
-					ColNames: []ColName{
-						{"hoge", "id"},
-						{"hoge", "name"},
-					},
-					ColTypes: []ColType{
-						"int",
-						"varchar",
-					},
-				},
-			},
-			given: Table{
-				ColNames: []ColName{
-					{"hoge", "id"},
-					{"hoge", "name"},
-				},
-				Rows: []Row{
-					{
-						Values{1, "taro"},
-					},
-					{
-						Values{2, "hanako"},
-					},
-				},
-				Schema: TableSchema{
-					ColNames: []ColName{
-						{"hoge", "id"},
-						{"hoge", "name"},
-					},
-					ColTypes: []ColType{
-						"int",
-						"varchar",
 					},
 				},
 			},
 			givenColNames: []ColName{
-				{"hoge", "id"},
-				{"hoge", "name"},
+				{"hoge", "id", "int"},
+				{"hoge", "name", "varchar"},
 			},
 			givenValsList: []Values{
 				{
@@ -155,8 +120,8 @@ func TestProject(t *testing.T) {
 			name: "test project columns",
 			givenTable: Table{
 				ColNames: ColNames{
-					ColName{"hoge", "id"},
-					ColName{"piyo", "name"},
+					{"hoge", "id", "int"},
+					{"piyo", "name", "varchar"},
 				},
 				Rows: Rows{
 					Row{
@@ -168,15 +133,15 @@ func TestProject(t *testing.T) {
 				},
 			},
 			givenCols: ColNames{
-				ColName{"hoge", "id"},
-				ColName{"piyo", "name"},
-				ColName{"hoge", "id"},
+				{"hoge", "id", "int"},
+				{"piyo", "name", "varchar"},
+				{"hoge", "id", "int"},
 			},
 			expected: Rows{
-				Row{
+				{
 					Values: Values{"Hello", 1, "Hello"},
 				},
-				Row{
+				{
 					Values: Values{"World", 1, "World"},
 				},
 			},
@@ -186,10 +151,11 @@ func TestProject(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual := tt.givenTable.Project(tt.givenCols)
+			actual, err := tt.givenTable.Project(tt.givenCols)
 			if actual.Equal(tt.expected) {
 				t.Errorf("given(%v): expected %v, actual %v", tt.givenTable, tt.expected, actual)
 			}
+			assert.NoError(t, err)
 		})
 	}
 }
