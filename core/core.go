@@ -1,12 +1,28 @@
 package core
 
+import (
+	"errors"
+	"reflect"
+)
+
 const NotFound = ColumnID(-1)
 
-// ColName is column name
-type ColName string
+var (
+	TableAlreadyExistsError = errors.New("The table already exists")
+)
 
 // ColNames is list of column names
 type ColNames []ColName
+
+// ColName is column name
+type ColName struct {
+	TableName string
+	Name      string
+}
+
+func (name ColName) Equal(other ColName) bool {
+	return name.TableName == other.TableName && name.Name == other.Name
+}
 
 type Value interface{}
 type Values []Value
@@ -59,19 +75,46 @@ func (r *Row) getByID(i ColumnID) Value {
 	return r.Values[i]
 }
 
+type ColType string
+type ColTypes []ColType
+
+type TableSchema struct {
+	ColNames ColNames
+	ColTypes ColTypes
+}
+
+func (schema TableSchema) Equal(other TableSchema) bool {
+	return reflect.DeepEqual(schema.ColNames, other.ColNames) && reflect.DeepEqual(schema.ColTypes, other.ColTypes)
+}
+
 type Table struct {
 	ColNames ColNames
 	Rows     Rows
+	Schema   TableSchema
 }
 
-type Adder interface {
-	Add(v interface{})
+type DB struct {
+	Tables map[string]Table
 }
 
-type ValuesList []Values
+func NewDB() *DB {
+	db := &DB{
+		Tables: make(map[string]Table),
+	}
+	return db
+}
 
-type ResVals struct {
-	Values Values
+func (db *DB) CreateTable(tableName string, schema TableSchema) error {
+	if _, ok := db.Tables[tableName]; ok {
+		return TableAlreadyExistsError
+	}
+
+	db.Tables[tableName] = Table{
+		ColNames: make(ColNames, 0),
+		Rows:     make(Rows, 0),
+		Schema:   schema,
+	}
+	return nil
 }
 
 func (t *Table) Project(names ColNames) Rows {
@@ -95,7 +138,7 @@ func (t *Table) ToIndex(names ColNames) []ColumnID {
 	for _, name := range names {
 		ok := false
 		for i, col := range tbCols {
-			if name == col {
+			if name.Equal(col) {
 				idxs = append(idxs, ColumnID(i))
 				ok = true
 			}

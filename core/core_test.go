@@ -16,8 +16,8 @@ func TestProject(t *testing.T) {
 			name: "test project columns",
 			givenTable: Table{
 				ColNames: ColNames{
-					ColName("hoge"),
-					ColName("piyo"),
+					ColName{"hoge", "id"},
+					ColName{"piyo", "name"},
 				},
 				Rows: Rows{
 					Row{
@@ -29,9 +29,9 @@ func TestProject(t *testing.T) {
 				},
 			},
 			givenCols: ColNames{
-				ColName("piyo"),
-				ColName("hoge"),
-				ColName("piyo"),
+				ColName{"hoge", "id"},
+				ColName{"piyo", "name"},
+				ColName{"hoge", "id"},
 			},
 			expected: Rows{
 				Row{
@@ -53,5 +53,56 @@ func TestProject(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestCreate(t *testing.T) {
+
+	db := NewDB()
+
+	tests := []struct {
+		name           string
+		givenDB        *DB
+		givenTableName string
+		givenSchema    TableSchema
+		wantedSchema   TableSchema
+	}{
+		{
+			name:           "test create table",
+			givenDB:        db,
+			givenTableName: "hoge",
+			givenSchema: TableSchema{
+				ColNames: ColNames{
+					ColName{"hoge", "id"},
+					ColName{"hoge", "name"},
+				},
+				ColTypes: ColTypes{
+					ColType("int"),
+					ColType("varchar"),
+				},
+			},
+			wantedSchema: TableSchema{
+				ColNames: ColNames{
+					ColName{"hoge", "id"},
+					ColName{"hoge", "name"},
+				},
+				ColTypes: ColTypes{
+					ColType("int"),
+					ColType("varchar"),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			db.CreateTable(tt.givenTableName, tt.givenSchema)
+
+			actualSchema := db.Tables[tt.givenTableName].Schema
+
+			if !actualSchema.Equal(tt.wantedSchema) {
+				t.Errorf("expected %v, actual %v", tt.wantedSchema, actualSchema)
+			}
+		})
+	}
 }
