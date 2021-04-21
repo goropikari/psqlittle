@@ -11,21 +11,32 @@ var (
 	TableAlreadyExistsError = errors.New("The table already exists")
 )
 
-// ColNames is list of column names
-type ColNames []ColName
-
 // ColName is column name
 type ColName struct {
 	TableName string
 	Name      string
 }
 
+// ColNames is list of column names
+type ColNames []ColName
+
 func (name ColName) Equal(other ColName) bool {
 	return name.TableName == other.TableName && name.Name == other.Name
 }
 
+func (names ColNames) Equal(others ColNames) bool {
+	for k, name := range names {
+		if !name.Equal(others[k]) {
+			return false
+		}
+	}
+
+	return true
+}
+
 type Value interface{}
 type Values []Value
+type ValuesList []Values
 
 type Row struct {
 	Values Values
@@ -93,27 +104,18 @@ type Table struct {
 	Schema   TableSchema
 }
 
-type DB struct {
-	Tables map[string]Table
+func (t Table) Equal(other Table) bool {
+	return t.ColNames.Equal(other.ColNames) && t.Rows.Equal(other.Rows) && t.Schema.Equal(other.Schema)
 }
 
-func NewDB() *DB {
-	db := &DB{
-		Tables: make(map[string]Table),
-	}
-	return db
-}
-
-func (db *DB) CreateTable(tableName string, schema TableSchema) error {
-	if _, ok := db.Tables[tableName]; ok {
-		return TableAlreadyExistsError
+func (t *Table) validateInsert(cols ColNames, valuesList ValuesList) error {
+	// TODO: valuesList の各要素の長さが全部同じかチェックする
+	if len(t.ColNames) != len(valuesList[0]) {
+		return errors.New("invalid insert elements")
 	}
 
-	db.Tables[tableName] = Table{
-		ColNames: make(ColNames, 0),
-		Rows:     make(Rows, 0),
-		Schema:   schema,
-	}
+	// TODO: 型で validation かける
+
 	return nil
 }
 
@@ -149,4 +151,51 @@ func (t *Table) ToIndex(names ColNames) []ColumnID {
 	}
 
 	return idxs
+}
+
+type DB struct {
+	Tables map[string]Table
+}
+
+func NewDB() *DB {
+	db := &DB{
+		Tables: make(map[string]Table),
+	}
+	return db
+}
+
+func (db *DB) CreateTable(tableName string, schema TableSchema) error {
+	if _, ok := db.Tables[tableName]; ok {
+		return TableAlreadyExistsError
+	}
+
+	db.Tables[tableName] = Table{
+		ColNames: make(ColNames, 0),
+		Rows:     make(Rows, 0),
+		Schema:   schema,
+	}
+	return nil
+}
+
+func (table *Table) Insert(cols ColNames, inputValsList ValuesList) error {
+	if cols == nil {
+		cols = table.ColNames
+	}
+
+	if err := table.validateInsert(cols, inputValsList); err != nil {
+		return err
+	}
+
+	numCols := len(table.ColNames)
+	idxs := table.ToIndex(cols)
+
+	for _, vals := range inputValsList {
+		tvalues := make(Values, numCols)
+		for vi := range idxs {
+			tvalues[vi] = vals[vi]
+		}
+
+	}
+
+	return nil
 }
