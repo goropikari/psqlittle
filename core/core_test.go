@@ -15,7 +15,7 @@ func TestCreate(t *testing.T) {
 		givenDB        *DB
 		givenTableName string
 		givenCols      Cols
-		wantedCols     Cols
+		wantedTable    Table
 	}{
 		{
 			name:           "test create table",
@@ -25,9 +25,15 @@ func TestCreate(t *testing.T) {
 				{ColName{"hoge", "id"}, integer},
 				{ColName{"hoge", "name"}, varchar},
 			},
-			wantedCols: Cols{
-				{ColName{"hoge", "id"}, integer},
-				{ColName{"hoge", "name"}, varchar},
+			wantedTable: Table{
+				Cols: Cols{
+					{ColName{"hoge", "id"}, integer},
+					{ColName{"hoge", "name"}, varchar},
+				},
+				ColNameIndexes: ColNameIndexes{
+					ColName{"hoge", "id"}:   0,
+					ColName{"hoge", "name"}: 1,
+				},
 			},
 		},
 	}
@@ -37,10 +43,10 @@ func TestCreate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			db.CreateTable(tt.givenTableName, tt.givenCols)
 
-			actualCols := db.Tables[tt.givenTableName].Cols
+			actualTable := db.Tables[tt.givenTableName]
 
-			if !actualCols.Equal(tt.wantedCols) {
-				t.Errorf("expected %v, actual %v", tt.wantedCols, actualCols)
+			if !actualTable.Equal(tt.wantedTable) {
+				t.Errorf("expected %v, actual %v", tt.wantedTable, actualTable)
 			}
 		})
 	}
@@ -52,6 +58,10 @@ func TestInsert(t *testing.T) {
 		Cols: Cols{
 			{ColName{"hoge", "id"}, integer},
 			{ColName{"hoge", "name"}, varchar},
+		},
+		ColNameIndexes: ColNameIndexes{
+			ColName{"hoge", "id"}:   0,
+			ColName{"hoge", "name"}: 1,
 		},
 		Rows: []Row{},
 	}
@@ -70,6 +80,10 @@ func TestInsert(t *testing.T) {
 				Cols: Cols{
 					{ColName{"hoge", "id"}, integer},
 					{ColName{"hoge", "name"}, varchar},
+				},
+				ColNameIndexes: ColNameIndexes{
+					ColName{"hoge", "id"}:   0,
+					ColName{"hoge", "name"}: 1,
 				},
 				Rows: []Row{
 					{
@@ -111,10 +125,10 @@ func TestInsert(t *testing.T) {
 func TestProject(t *testing.T) {
 
 	tests := []struct {
-		name       string
-		expected   Rows
-		givenTable Table
-		givenCols  Cols
+		name          string
+		expected      Rows
+		givenTable    Table
+		givenColNames ColNames
 	}{
 		{
 			name: "test project columns",
@@ -122,6 +136,10 @@ func TestProject(t *testing.T) {
 				Cols: Cols{
 					{ColName{"hoge", "id"}, integer},
 					{ColName{"hoge", "name"}, varchar},
+				},
+				ColNameIndexes: ColNameIndexes{
+					ColName{"hoge", "id"}:   0,
+					ColName{"hoge", "name"}: 1,
 				},
 				Rows: Rows{
 					Row{
@@ -132,10 +150,10 @@ func TestProject(t *testing.T) {
 					},
 				},
 			},
-			givenCols: Cols{
-				{ColName{"hoge", "id"}, integer},
-				{ColName{"hoge", "name"}, varchar},
-				{ColName{"hoge", "id"}, integer},
+			givenColNames: ColNames{
+				{"hoge", "id"},
+				{"hoge", "name"},
+				{"hoge", "id"},
 			},
 			expected: Rows{
 				{
@@ -151,7 +169,7 @@ func TestProject(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := tt.givenTable.Project(tt.givenCols)
+			actual, err := tt.givenTable.Project(tt.givenColNames)
 			if actual.Equal(tt.expected) {
 				t.Errorf("given(%v): expected %v, actual %v", tt.givenTable, tt.expected, actual)
 			}

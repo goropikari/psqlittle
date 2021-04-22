@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"reflect"
 )
 
 var (
@@ -31,9 +32,15 @@ func (db *DB) CreateTable(tableName string, Cols Cols) error {
 		return ErrTableAlreadyExists
 	}
 
+	ColNameIndexes := make(ColNameIndexes)
+	for k, col := range Cols {
+		ColNameIndexes[col.ColName] = k
+	}
+
 	db.Tables[tableName] = Table{
-		Cols: Cols,
-		Rows: make(Rows, 0),
+		Cols:           Cols,
+		Rows:           make(Rows, 0),
+		ColNameIndexes: ColNameIndexes,
 	}
 	return nil
 }
@@ -51,6 +58,9 @@ type ColName struct {
 	TableName string
 	Name      string
 }
+
+// ColNames is list of ColName
+type ColNames []ColName
 
 // Col is type of column
 type Col struct {
@@ -120,6 +130,9 @@ func (r Row) Equal(other Row) bool {
 
 // Equal checks the equality of Rows
 func (r Rows) Equal(other Rows) bool {
+	if len(r) == len(other) && len(r) == 0 {
+		return true
+	}
 	if other == nil {
 		return false
 	}
@@ -138,27 +151,35 @@ func (r Rows) Equal(other Rows) bool {
 }
 
 // ColumnID is type of column id (index of column).
-type ColumnID int64
+type ColumnID int
 
 // getByID is method to get column value by ColumnID
 func (r *Row) getByID(i ColumnID) Value {
 	return r.Values[i]
 }
 
+// ColNameIndexes is map ColName to corresponding column index
+type ColNameIndexes map[ColName]int
+
+// Equal checks the equality of ColNameIndexes
+func (c ColNameIndexes) Equal(other ColNameIndexes) bool {
+	return reflect.DeepEqual(c, other)
+}
+
 // Table is struct for Table
 type Table struct {
 	Cols           Cols
-	ColNameIndexes map[ColName]int64
+	ColNameIndexes ColNameIndexes
 	Rows           Rows
 }
 
 // Equal checks the equality of Table
 func (t Table) Equal(other Table) bool {
-	return t.Cols.Equal(other.Cols) && t.Rows.Equal(other.Rows)
+	return t.Cols.Equal(other.Cols) && t.Rows.Equal(other.Rows) && t.ColNameIndexes.Equal(other.ColNameIndexes)
 }
 
 // Project is method to select columns of table.
-func (t *Table) Project(names Cols) (Rows, error) {
+func (t *Table) Project(names ColNames) (Rows, error) {
 	returnRows := make(Rows, 0, 10)
 	idxs, err := t.toIndex(names)
 	if err != nil {
@@ -176,19 +197,12 @@ func (t *Table) Project(names Cols) (Rows, error) {
 	return returnRows, nil
 }
 
-func (t *Table) toIndex(names Cols) ([]ColumnID, error) {
-	idxs := make([]ColumnID, 0, 10)
-	tbCols := t.Cols
+func (t *Table) toIndex(names ColNames) ([]ColumnID, error) {
+	idxs := make([]ColumnID, 0, len(names))
 	for _, name := range names {
-		ok := false
-		for i, col := range tbCols {
-			if name.Equal(col) {
-				idxs = append(idxs, ColumnID(i))
-				ok = true
-			}
-		}
-
-		if !ok {
+		if val, ok := t.ColNameIndexes[name]; ok {
+			idxs = append(idxs, ColumnID(val))
+		} else {
 			return nil, ErrIndexNotFound
 		}
 	}
@@ -207,7 +221,11 @@ func (t *Table) Insert(cols Cols, inputValsList ValuesList) error {
 	}
 
 	numCols := len(t.Cols)
-	idxs, err := t.toIndex(cols)
+	colNames := make(ColNames, 0, numCols)
+	for _, col := range cols {
+		colNames = append(colNames, col.ColName)
+	}
+	idxs, err := t.toIndex(colNames)
 	if err != nil {
 		return err
 	}
