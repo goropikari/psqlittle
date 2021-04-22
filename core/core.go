@@ -26,14 +26,14 @@ func NewDB() *DB {
 }
 
 // CreateTable is method to create table
-func (db *DB) CreateTable(tableName string, colNames ColNames) error {
+func (db *DB) CreateTable(tableName string, Cols Cols) error {
 	if _, ok := db.Tables[tableName]; ok {
 		return ErrTableAlreadyExists
 	}
 
 	db.Tables[tableName] = Table{
-		ColNames: colNames,
-		Rows:     make(Rows, 0),
+		Cols: Cols,
+		Rows: make(Rows, 0),
 	}
 	return nil
 }
@@ -50,19 +50,29 @@ const (
 type ColName struct {
 	TableName string
 	Name      string
-	ColType   ColType
 }
 
-// ColNames is list of column names
-type ColNames []ColName
+// Col is type of column
+type Col struct {
+	ColName ColName
+	ColType ColType
+}
+
+// Cols is list of column names
+type Cols []Col
+
+// Equal check the equality of Col
+func (col Col) Equal(other Col) bool {
+	return col.ColName.Equal(other.ColName) && col.ColType == other.ColType
+}
 
 // Equal checks the equality of ColName
 func (name ColName) Equal(other ColName) bool {
 	return name.TableName == other.TableName && name.Name == other.Name
 }
 
-// Equal checks the equality of ColNames
-func (names ColNames) Equal(others ColNames) bool {
+// Equal checks the equality of Cols
+func (names Cols) Equal(others Cols) bool {
 	for k, name := range names {
 		if !name.Equal(others[k]) {
 			return false
@@ -137,17 +147,18 @@ func (r *Row) getByID(i ColumnID) Value {
 
 // Table is struct for Table
 type Table struct {
-	ColNames ColNames
-	Rows     Rows
+	Cols           Cols
+	ColNameIndexes map[ColName]int64
+	Rows           Rows
 }
 
 // Equal checks the equality of Table
 func (t Table) Equal(other Table) bool {
-	return t.ColNames.Equal(other.ColNames) && t.Rows.Equal(other.Rows)
+	return t.Cols.Equal(other.Cols) && t.Rows.Equal(other.Rows)
 }
 
 // Project is method to select columns of table.
-func (t *Table) Project(names ColNames) (Rows, error) {
+func (t *Table) Project(names Cols) (Rows, error) {
 	returnRows := make(Rows, 0, 10)
 	idxs, err := t.toIndex(names)
 	if err != nil {
@@ -165,9 +176,9 @@ func (t *Table) Project(names ColNames) (Rows, error) {
 	return returnRows, nil
 }
 
-func (t *Table) toIndex(names ColNames) ([]ColumnID, error) {
+func (t *Table) toIndex(names Cols) ([]ColumnID, error) {
 	idxs := make([]ColumnID, 0, 10)
-	tbCols := t.ColNames
+	tbCols := t.Cols
 	for _, name := range names {
 		ok := false
 		for i, col := range tbCols {
@@ -186,16 +197,16 @@ func (t *Table) toIndex(names ColNames) ([]ColumnID, error) {
 }
 
 // Insert is method to insert record into table.
-func (t *Table) Insert(cols ColNames, inputValsList ValuesList) error {
+func (t *Table) Insert(cols Cols, inputValsList ValuesList) error {
 	if cols == nil {
-		cols = t.ColNames
+		cols = t.Cols
 	}
 
 	if err := t.validateInsert(cols, inputValsList); err != nil {
 		return err
 	}
 
-	numCols := len(t.ColNames)
+	numCols := len(t.Cols)
 	idxs, err := t.toIndex(cols)
 	if err != nil {
 		return err
@@ -212,9 +223,9 @@ func (t *Table) Insert(cols ColNames, inputValsList ValuesList) error {
 	return nil
 }
 
-func (t *Table) validateInsert(cols ColNames, valuesList ValuesList) error {
+func (t *Table) validateInsert(cols Cols, valuesList ValuesList) error {
 	// TODO: valuesList の各要素の長さが全部同じかチェックする
-	if len(t.ColNames) != len(valuesList[0]) {
+	if len(t.Cols) != len(valuesList[0]) {
 		return errors.New("invalid insert elements")
 	}
 
