@@ -22,12 +22,12 @@ func TestCreate(t *testing.T) {
 			givenDB:        db,
 			givenTableName: "hoge",
 			givenColNames: ColNames{
-				ColName{"hoge", "id", "int"},
-				ColName{"hoge", "name", "varchar"},
+				ColName{"hoge", "id", integer},
+				ColName{"hoge", "name", varchar},
 			},
 			wantedColNames: ColNames{
-				ColName{"hoge", "id", "int"},
-				ColName{"hoge", "name", "varchar"},
+				ColName{"hoge", "id", integer},
+				ColName{"hoge", "name", varchar},
 			},
 		},
 	}
@@ -50,8 +50,8 @@ func TestInsert(t *testing.T) {
 
 	table := Table{
 		ColNames: []ColName{
-			{"hoge", "id", "int"},
-			{"hoge", "name", "varchar"},
+			{"hoge", "id", integer},
+			{"hoge", "name", varchar},
 		},
 		Rows: []Row{},
 	}
@@ -68,8 +68,8 @@ func TestInsert(t *testing.T) {
 			given: table,
 			expected: Table{
 				ColNames: []ColName{
-					{"hoge", "id", "int"},
-					{"hoge", "name", "varchar"},
+					{"hoge", "id", integer},
+					{"hoge", "name", varchar},
 				},
 				Rows: []Row{
 					{
@@ -81,8 +81,8 @@ func TestInsert(t *testing.T) {
 				},
 			},
 			givenColNames: []ColName{
-				{"hoge", "id", "int"},
-				{"hoge", "name", "varchar"},
+				{"hoge", "id", integer},
+				{"hoge", "name", varchar},
 			},
 			givenValsList: []Values{
 				{
@@ -102,7 +102,7 @@ func TestInsert(t *testing.T) {
 			tt.given.Insert(tt.givenColNames, tt.givenValsList)
 
 			if !tt.given.Equal(tt.expected) {
-				t.Errorf("expected %s, actual %s", tt.expected, tt.given)
+				t.Errorf("expected %v, actual %v", tt.expected, tt.given)
 			}
 		})
 	}
@@ -120,8 +120,8 @@ func TestProject(t *testing.T) {
 			name: "test project columns",
 			givenTable: Table{
 				ColNames: ColNames{
-					{"hoge", "id", "int"},
-					{"piyo", "name", "varchar"},
+					{"hoge", "id", integer},
+					{"piyo", "name", varchar},
 				},
 				Rows: Rows{
 					Row{
@@ -133,9 +133,9 @@ func TestProject(t *testing.T) {
 				},
 			},
 			givenCols: ColNames{
-				{"hoge", "id", "int"},
-				{"piyo", "name", "varchar"},
-				{"hoge", "id", "int"},
+				{"hoge", "id", integer},
+				{"piyo", "name", varchar},
+				{"hoge", "id", integer},
 			},
 			expected: Rows{
 				{

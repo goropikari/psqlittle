@@ -39,7 +39,12 @@ func (db *DB) CreateTable(tableName string, colNames ColNames) error {
 }
 
 // ColType is a type of column
-type ColType string
+type ColType int
+
+const (
+	integer ColType = iota
+	varchar
+)
 
 // ColName is column name
 type ColName struct {
