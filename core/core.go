@@ -62,6 +62,11 @@ type ColName struct {
 // ColNames is list of ColName
 type ColNames []ColName
 
+// Equal checks the equality of ColName
+func (name ColName) Equal(other ColName) bool {
+	return name.TableName == other.TableName && name.Name == other.Name
+}
+
 // Col is type of column
 type Col struct {
 	ColName ColName
@@ -76,20 +81,34 @@ func (col Col) Equal(other Col) bool {
 	return col.ColName.Equal(other.ColName) && col.ColType == other.ColType
 }
 
-// Equal checks the equality of ColName
-func (name ColName) Equal(other ColName) bool {
-	return name.TableName == other.TableName && name.Name == other.Name
-}
-
 // Equal checks the equality of Cols
-func (names Cols) Equal(others Cols) bool {
-	for k, name := range names {
-		if !name.Equal(others[k]) {
+func (cols Cols) Equal(others Cols) bool {
+	for k, col := range cols {
+		if !col.Equal(others[k]) {
 			return false
 		}
 	}
 
 	return true
+}
+
+// NotEqual checks the non-equality of Cols
+func (cols Cols) NotEqual(others Cols) bool {
+	return !cols.Equal(others)
+}
+
+// Copy copies Col.
+func (col Col) Copy() Col {
+	return Col{col.ColName, col.ColType}
+}
+
+// Copy copies Cols.
+func (cols Cols) Copy() Cols {
+	newCols := make(Cols, 0, len(cols))
+	for _, col := range cols {
+		newCols = append(newCols, col.Copy())
+	}
+	return newCols
 }
 
 // Value is any type for column
@@ -128,6 +147,13 @@ func (r Row) Equal(other Row) bool {
 	return ok
 }
 
+// Copy copies Row
+func (r Row) Copy() Row {
+	vals := make(Values, len(r.Values))
+	copy(vals, r.Values)
+	return Row{vals}
+}
+
 // Equal checks the equality of Rows
 func (r Rows) Equal(other Rows) bool {
 	if len(r) == len(other) && len(r) == 0 {
@@ -150,6 +176,21 @@ func (r Rows) Equal(other Rows) bool {
 	return ok
 }
 
+// NotEqual checks the non-equality of Rows
+func (r Rows) NotEqual(other Rows) bool {
+	return !r.Equal(other)
+}
+
+// Copy copies Rows
+func (r Rows) Copy() Rows {
+	rows := make(Rows, len(r))
+	for k, row := range r {
+		rows[k] = row.Copy()
+	}
+
+	return rows
+}
+
 // ColumnID is type of column id (index of column).
 type ColumnID int
 
@@ -166,6 +207,21 @@ func (c ColNameIndexes) Equal(other ColNameIndexes) bool {
 	return reflect.DeepEqual(c, other)
 }
 
+// NotEqual checks the non-equality of ColNameIndexes
+func (c ColNameIndexes) NotEqual(other ColNameIndexes) bool {
+	return !c.Equal(other)
+}
+
+// Copy copies ColNameIndexes
+func (c ColNameIndexes) Copy() ColNameIndexes {
+	indexes := make(ColNameIndexes)
+
+	for key, val := range c {
+		indexes[key] = val
+	}
+	return indexes
+}
+
 // Table is struct for Table
 type Table struct {
 	Cols           Cols
@@ -176,6 +232,11 @@ type Table struct {
 // Equal checks the equality of Table
 func (t Table) Equal(other Table) bool {
 	return t.Cols.Equal(other.Cols) && t.Rows.Equal(other.Rows) && t.ColNameIndexes.Equal(other.ColNameIndexes)
+}
+
+// NotEqual checks the non-equality of Table
+func (t Table) NotEqual(other Table) bool {
+	return !t.Equal(other)
 }
 
 // Project is method to select columns of table.
@@ -195,6 +256,24 @@ func (t *Table) Project(names ColNames) (Rows, error) {
 	}
 
 	return returnRows, nil
+}
+
+// Rename renames table name
+func (t *Table) Rename(tableName string) {
+	for i := 0; i < len(t.Cols); i++ {
+		col := t.Cols[i]
+		col.ColName.TableName = tableName
+		t.Cols[i] = col
+	}
+}
+
+// Copy copies Table
+func (t *Table) Copy() *Table {
+	return &Table{
+		Cols:           t.Cols.Copy(),
+		ColNameIndexes: t.ColNameIndexes.Copy(),
+		Rows:           t.Rows.Copy(),
+	}
 }
 
 func (t *Table) toIndex(names ColNames) ([]ColumnID, error) {

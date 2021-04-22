@@ -6,6 +6,50 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTableCopy(t *testing.T) {
+
+	var tests = []struct {
+		name  string
+		given Table
+	}{
+		{
+			name: "test insert",
+			given: Table{
+				Cols: Cols{
+					{ColName{"hoge", "id"}, integer},
+					{ColName{"hoge", "name"}, varchar},
+				},
+				ColNameIndexes: ColNameIndexes{
+					ColName{"hoge", "id"}:   0,
+					ColName{"hoge", "name"}: 1,
+				},
+				Rows: []Row{
+					{
+						Values: Values{1, "Hello"},
+					},
+					{
+						Values: Values{2, "World"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			actual := tt.given.Copy()
+			actual.Cols[0].ColName.TableName = "piyo"
+			actual.ColNameIndexes[ColName{"hoge", "id"}] = 1
+			actual.Rows[0].Values[0] = "piyo"
+
+			if !actual.NotEqual(tt.given) {
+				t.Errorf("expected %v, actual %v", tt.given, actual)
+			}
+		})
+	}
+}
+
 func TestCreate(t *testing.T) {
 
 	db := NewDB()
