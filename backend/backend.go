@@ -21,18 +21,18 @@ func NewDB() *DB {
 }
 
 // CreateTable is method to create table
-func (db *DB) CreateTable(tableName string, Cols Cols) error {
+func (db *DB) CreateTable(tableName string, cols Cols) error {
 	if _, ok := db.Tables[tableName]; ok {
 		return ErrTableAlreadyExists
 	}
 
 	ColNameIndexes := make(ColNameIndexes)
-	for k, col := range Cols {
+	for k, col := range cols {
 		ColNameIndexes[col.ColName] = k
 	}
 
 	db.Tables[tableName] = Table{
-		Cols:           Cols,
+		Cols:           cols,
 		Rows:           make(Rows, 0),
 		ColNameIndexes: ColNameIndexes,
 	}

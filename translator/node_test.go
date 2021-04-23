@@ -10,7 +10,7 @@ import (
 	"github.com/goropikari/mysqlite2/translator/mock"
 )
 
-func TestOR(t *testing.T) {
+func TestORNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
@@ -131,7 +131,7 @@ func TestOR(t *testing.T) {
 	}
 }
 
-func TestAND(t *testing.T) {
+func TestANDNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
@@ -280,7 +280,7 @@ func TestAND(t *testing.T) {
 	}
 }
 
-func TestBinOp(t *testing.T) {
+func TestBinOpNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
