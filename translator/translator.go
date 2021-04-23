@@ -1,5 +1,12 @@
 package translator
 
+import "github.com/goropikari/mysqlite2/core"
+
+// Row is interface of row of table.
+type Row interface {
+	GetValueByColName(core.ColName) core.Value
+}
+
 // BoolType express SQL boolean including Null
 type BoolType int
 
@@ -24,29 +31,29 @@ const (
 
 // Expr is interface of boolean expression
 type Expr interface {
-	Eval() func(i int) interface{}
+	Eval() func(row Row) core.Value
 }
 
 // BoolConstNode is expression of boolean const
 type BoolConstNode struct {
-	Bool interface{}
+	Bool core.Value
 }
 
 // Eval evaluates BoolConstNode
-func (b BoolConstNode) Eval() func(int) interface{} {
-	return func(x int) interface{} {
+func (b BoolConstNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
 		return b.Bool
 	}
 }
 
-// IntergerNode is expression of integer
-type IntergerNode struct {
+// IntegerNode is expression of integer
+type IntegerNode struct {
 	Val int
 }
 
 // Eval evaluates IntegerNode
-func (i IntergerNode) Eval() func(int) interface{} {
-	return func(x int) interface{} {
+func (i IntegerNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
 		return i.Val
 	}
 }
@@ -57,9 +64,9 @@ type NotNode struct {
 }
 
 // Eval evaluates NotNode
-func (nn NotNode) Eval() func(int) interface{} {
-	return func(i int) interface{} {
-		return Not(nn.Expr.Eval()(i))
+func (nn NotNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
+		return Not(nn.Expr.Eval()(row))
 	}
 }
 
@@ -70,9 +77,9 @@ type ORNode struct {
 }
 
 // Eval evaluates ORNode
-func (orn ORNode) Eval() func(int) interface{} {
-	return func(i int) interface{} {
-		return OR(orn.Lexpr.Eval()(i), orn.Rexpr.Eval()(i))
+func (orn ORNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
+		return OR(orn.Lexpr.Eval()(row), orn.Rexpr.Eval()(row))
 	}
 }
 
@@ -83,9 +90,9 @@ type ANDNode struct {
 }
 
 // Eval evaluates ANDNode
-func (andn ANDNode) Eval() func(int) interface{} {
-	return func(i int) interface{} {
-		return AND(andn.Lexpr.Eval()(i), andn.Rexpr.Eval()(i))
+func (andn ANDNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
+		return AND(andn.Lexpr.Eval()(row), andn.Rexpr.Eval()(row))
 	}
 }
 
@@ -97,10 +104,10 @@ type BinOpNode struct {
 }
 
 // Eval evaluates BinOpNode
-func (e BinOpNode) Eval() func(int) interface{} {
-	return func(i int) interface{} {
-		l := e.Lexpr.Eval()(i)
-		r := e.Rexpr.Eval()(i)
+func (e BinOpNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
+		l := e.Lexpr.Eval()(row)
+		r := e.Rexpr.Eval()(row)
 		if l == Null || r == Null {
 			return Null
 		}
@@ -121,7 +128,7 @@ func (e BinOpNode) Eval() func(int) interface{} {
 }
 
 // Not negates x
-func Not(x interface{}) interface{} {
+func Not(x core.Value) core.Value {
 	if x == Null {
 		return Null
 	}
@@ -137,7 +144,7 @@ func Not(x interface{}) interface{} {
 }
 
 // OR calculates x OR y
-func OR(x, y interface{}) interface{} {
+func OR(x, y core.Value) core.Value {
 	// memo:
 	// True or Null -> True
 	// Null or True -> True
@@ -156,7 +163,7 @@ func OR(x, y interface{}) interface{} {
 }
 
 // AND calculates x AND y
-func AND(x, y interface{}) interface{} {
+func AND(x, y core.Value) core.Value {
 	// memo:
 	// True and Null -> Null
 	// Null and True -> Null

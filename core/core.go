@@ -37,35 +37,13 @@ func (db *DB) CreateTable(tableName string, Cols Cols) error {
 	return nil
 }
 
-// ColType is a type of column
-type ColType int
-
-const (
-	integer ColType = iota
-	varchar
-)
-
-// ColName is column name
-type ColName struct {
-	TableName string
-	Name      string
-}
-
-// ColNames is list of ColName
-type ColNames []ColName
-
-// Equal checks the equality of ColName
-func (name ColName) Equal(other ColName) bool {
-	return name.TableName == other.TableName && name.Name == other.Name
-}
-
 // Col is type of column
 type Col struct {
 	ColName ColName
 	ColType ColType
 }
 
-// Cols is list of column names
+// Cols is list of Col
 type Cols []Col
 
 // Equal check the equality of Col
