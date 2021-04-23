@@ -4,8 +4,8 @@ package core
 type ColType int
 
 const (
-	integer ColType = iota
-	varchar
+	Integer ColType = iota
+	VarChar
 )
 
 // ColName is column name
@@ -21,3 +21,12 @@ type ColNames []ColName
 func (name ColName) Equal(other ColName) bool {
 	return name.TableName == other.TableName && name.Name == other.Name
 }
+
+// Value is any type for column
+type Value interface{}
+
+// Values is list of Value
+type Values []Value
+
+// ValuesList is list of Values
+type ValuesList []Values

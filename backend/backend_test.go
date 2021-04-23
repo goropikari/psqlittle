@@ -1,8 +1,9 @@
-package core
+package backend
 
 import (
 	"testing"
 
+	"github.com/goropikari/mysqlite2/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,19 +17,19 @@ func TestTableCopy(t *testing.T) {
 			name: "test insert",
 			given: Table{
 				Cols: Cols{
-					{ColName{"hoge", "id"}, integer},
-					{ColName{"hoge", "name"}, varchar},
+					{core.ColName{"hoge", "id"}, core.Integer},
+					{core.ColName{"hoge", "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					ColName{"hoge", "id"}:   0,
-					ColName{"hoge", "name"}: 1,
+					core.ColName{"hoge", "id"}:   0,
+					core.ColName{"hoge", "name"}: 1,
 				},
 				Rows: []Row{
 					{
-						Values: Values{1, "Hello"},
+						Values: core.Values{1, "Hello"},
 					},
 					{
-						Values: Values{2, "World"},
+						Values: core.Values{2, "World"},
 					},
 				},
 			},
@@ -40,7 +41,7 @@ func TestTableCopy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.given.Copy()
 			actual.Cols[0].ColName.TableName = "piyo"
-			actual.ColNameIndexes[ColName{"hoge", "id"}] = 1
+			actual.ColNameIndexes[core.ColName{"hoge", "id"}] = 1
 			actual.Rows[0].Values[0] = "piyo"
 
 			if !actual.NotEqual(tt.given) {
@@ -66,17 +67,17 @@ func TestCreate(t *testing.T) {
 			givenDB:        db,
 			givenTableName: "hoge",
 			givenCols: Cols{
-				{ColName{"hoge", "id"}, integer},
-				{ColName{"hoge", "name"}, varchar},
+				{core.ColName{"hoge", "id"}, core.Integer},
+				{core.ColName{"hoge", "name"}, core.VarChar},
 			},
 			wantedTable: Table{
 				Cols: Cols{
-					{ColName{"hoge", "id"}, integer},
-					{ColName{"hoge", "name"}, varchar},
+					{core.ColName{"hoge", "id"}, core.Integer},
+					{core.ColName{"hoge", "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					ColName{"hoge", "id"}:   0,
-					ColName{"hoge", "name"}: 1,
+					core.ColName{"hoge", "id"}:   0,
+					core.ColName{"hoge", "name"}: 1,
 				},
 			},
 		},
@@ -100,12 +101,12 @@ func TestInsert(t *testing.T) {
 
 	table := Table{
 		Cols: Cols{
-			{ColName{"hoge", "id"}, integer},
-			{ColName{"hoge", "name"}, varchar},
+			{core.ColName{"hoge", "id"}, core.Integer},
+			{core.ColName{"hoge", "name"}, core.VarChar},
 		},
 		ColNameIndexes: ColNameIndexes{
-			ColName{"hoge", "id"}:   0,
-			ColName{"hoge", "name"}: 1,
+			core.ColName{"hoge", "id"}:   0,
+			core.ColName{"hoge", "name"}: 1,
 		},
 		Rows: []Row{},
 	}
@@ -115,34 +116,34 @@ func TestInsert(t *testing.T) {
 		expected      Table
 		given         Table
 		givenCols     Cols
-		givenValsList ValuesList
+		givenValsList core.ValuesList
 	}{
 		{
 			name:  "test insert",
 			given: table,
 			expected: Table{
 				Cols: Cols{
-					{ColName{"hoge", "id"}, integer},
-					{ColName{"hoge", "name"}, varchar},
+					{core.ColName{"hoge", "id"}, core.Integer},
+					{core.ColName{"hoge", "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					ColName{"hoge", "id"}:   0,
-					ColName{"hoge", "name"}: 1,
+					core.ColName{"hoge", "id"}:   0,
+					core.ColName{"hoge", "name"}: 1,
 				},
 				Rows: []Row{
 					{
-						Values{1, "taro"},
+						core.Values{1, "taro"},
 					},
 					{
-						Values{2, "hanako"},
+						core.Values{2, "hanako"},
 					},
 				},
 			},
 			givenCols: Cols{
-				{ColName{"hoge", "id"}, integer},
-				{ColName{"hoge", "name"}, varchar},
+				{core.ColName{"hoge", "id"}, core.Integer},
+				{core.ColName{"hoge", "name"}, core.VarChar},
 			},
-			givenValsList: []Values{
+			givenValsList: []core.Values{
 				{
 					1,
 					"taro",
@@ -154,6 +155,7 @@ func TestInsert(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -172,39 +174,39 @@ func TestProject(t *testing.T) {
 		name          string
 		expected      Rows
 		givenTable    Table
-		givenColNames ColNames
+		givenColNames core.ColNames
 	}{
 		{
 			name: "test project columns",
 			givenTable: Table{
 				Cols: Cols{
-					{ColName{"hoge", "id"}, integer},
-					{ColName{"hoge", "name"}, varchar},
+					{core.ColName{"hoge", "id"}, core.Integer},
+					{core.ColName{"hoge", "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					ColName{"hoge", "id"}:   0,
-					ColName{"hoge", "name"}: 1,
+					core.ColName{"hoge", "id"}:   0,
+					core.ColName{"hoge", "name"}: 1,
 				},
 				Rows: Rows{
 					Row{
-						Values: Values{1, "Hello"},
+						Values: core.Values{1, "Hello"},
 					},
 					Row{
-						Values: Values{2, "World"},
+						Values: core.Values{2, "World"},
 					},
 				},
 			},
-			givenColNames: ColNames{
+			givenColNames: core.ColNames{
 				{"hoge", "id"},
 				{"hoge", "name"},
 				{"hoge", "id"},
 			},
 			expected: Rows{
 				{
-					Values: Values{"Hello", 1, "Hello"},
+					Values: core.Values{"Hello", 1, "Hello"},
 				},
 				{
-					Values: Values{"World", 1, "World"},
+					Values: core.Values{"World", 1, "World"},
 				},
 			},
 		},

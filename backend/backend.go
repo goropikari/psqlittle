@@ -1,8 +1,10 @@
-package core
+package backend
 
 import (
 	"errors"
 	"reflect"
+
+	"github.com/goropikari/mysqlite2/core"
 )
 
 // DB is struct for DB
@@ -39,8 +41,8 @@ func (db *DB) CreateTable(tableName string, Cols Cols) error {
 
 // Col is type of column
 type Col struct {
-	ColName ColName
-	ColType ColType
+	ColName core.ColName
+	ColType core.ColType
 }
 
 // Cols is list of Col
@@ -81,18 +83,9 @@ func (cols Cols) Copy() Cols {
 	return newCols
 }
 
-// Value is any type for column
-type Value interface{}
-
-// Values is list of Value
-type Values []Value
-
-// ValuesList is list of Values
-type ValuesList []Values
-
 // Row is struct of row of table
 type Row struct {
-	Values Values
+	Values core.Values
 }
 
 // Rows is list of Row
@@ -119,7 +112,7 @@ func (r Row) Equal(other Row) bool {
 
 // Copy copies Row
 func (r Row) Copy() Row {
-	vals := make(Values, len(r.Values))
+	vals := make(core.Values, len(r.Values))
 	copy(vals, r.Values)
 	return Row{vals}
 }
@@ -165,12 +158,12 @@ func (r Rows) Copy() Rows {
 type ColumnID int
 
 // getByID is method to get column value by ColumnID
-func (r *Row) getByID(i ColumnID) Value {
+func (r *Row) getByID(i ColumnID) core.Value {
 	return r.Values[i]
 }
 
 // ColNameIndexes is map ColName to corresponding column index
-type ColNameIndexes map[ColName]int
+type ColNameIndexes map[core.ColName]int
 
 // Equal checks the equality of ColNameIndexes
 func (c ColNameIndexes) Equal(other ColNameIndexes) bool {
@@ -210,7 +203,7 @@ func (t Table) NotEqual(other Table) bool {
 }
 
 // Project is method to select columns of table.
-func (t *Table) Project(names ColNames) (Rows, error) {
+func (t *Table) Project(names core.ColNames) (Rows, error) {
 	returnRows := make(Rows, 0, 10)
 	idxs, err := t.toIndex(names)
 	if err != nil {
@@ -246,7 +239,7 @@ func (t *Table) Copy() *Table {
 	}
 }
 
-func (t *Table) toIndex(names ColNames) ([]ColumnID, error) {
+func (t *Table) toIndex(names core.ColNames) ([]ColumnID, error) {
 	idxs := make([]ColumnID, 0, len(names))
 	for _, name := range names {
 		if val, ok := t.ColNameIndexes[name]; ok {
@@ -260,7 +253,7 @@ func (t *Table) toIndex(names ColNames) ([]ColumnID, error) {
 }
 
 // Insert is method to insert record into table.
-func (t *Table) Insert(cols Cols, inputValsList ValuesList) error {
+func (t *Table) Insert(cols Cols, inputValsList core.ValuesList) error {
 	if cols == nil {
 		cols = t.Cols
 	}
@@ -270,7 +263,7 @@ func (t *Table) Insert(cols Cols, inputValsList ValuesList) error {
 	}
 
 	numCols := len(t.Cols)
-	colNames := make(ColNames, 0, numCols)
+	colNames := make(core.ColNames, 0, numCols)
 	for _, col := range cols {
 		colNames = append(colNames, col.ColName)
 	}
@@ -280,7 +273,7 @@ func (t *Table) Insert(cols Cols, inputValsList ValuesList) error {
 	}
 
 	for _, vals := range inputValsList {
-		tvalues := make(Values, numCols)
+		tvalues := make(core.Values, numCols)
 		for vi := range idxs {
 			tvalues[vi] = vals[vi]
 		}
@@ -290,7 +283,7 @@ func (t *Table) Insert(cols Cols, inputValsList ValuesList) error {
 	return nil
 }
 
-func (t *Table) validateInsert(cols Cols, valuesList ValuesList) error {
+func (t *Table) validateInsert(cols Cols, valuesList core.ValuesList) error {
 	// TODO: valuesList の各要素の長さが全部同じかチェックする
 	if len(t.Cols) != len(valuesList[0]) {
 		return errors.New("invalid insert elements")
