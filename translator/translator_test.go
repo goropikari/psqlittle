@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/mysqlite2/testing/fake"
 	trans "github.com/goropikari/mysqlite2/translator"
 	"github.com/goropikari/mysqlite2/translator/mock"
 )
@@ -412,6 +414,43 @@ func TestBinOp(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			actual := tt.node.Eval()(row)
+			if actual != tt.expected {
+				t.Errorf("expected %v, actual %v", tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestEvalColRefNode(t *testing.T) {
+
+	n1 := fake.ColName()
+
+	var tests = []struct {
+		name      string
+		node      trans.Expr
+		givenName core.ColName
+		expected  interface{}
+	}{
+		{
+			name: "Get row's value",
+			node: trans.ColRefNode{
+				ColName: n1,
+			},
+			givenName: n1,
+			expected:  fake.Value(),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			row := mock.NewMockRow(ctrl)
+			row.EXPECT().GetValueByColName(tt.givenName).Return(tt.expected).AnyTimes()
+
 			actual := tt.node.Eval()(row)
 			if actual != tt.expected {
 				t.Errorf("expected %v, actual %v", tt.expected, actual)

@@ -58,6 +58,18 @@ func (i IntegerNode) Eval() func(Row) core.Value {
 	}
 }
 
+// ColRefNode is expression of integer
+type ColRefNode struct {
+	ColName core.ColName
+}
+
+// Eval evaluates ColRefNode
+func (i ColRefNode) Eval() func(Row) core.Value {
+	return func(row Row) core.Value {
+		return row.GetValueByColName(i.ColName)
+	}
+}
+
 // NotNode is expression of Not
 type NotNode struct {
 	Expr Expr
