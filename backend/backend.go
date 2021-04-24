@@ -1,5 +1,7 @@
 package backend
 
+//go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock
+
 import (
 	"errors"
 	"reflect"
@@ -7,21 +9,40 @@ import (
 	"github.com/goropikari/mysqlite2/core"
 )
 
-// DB is struct for DB
-type DB struct {
-	Tables map[string]Table
+// DB is interface of DBMS
+type DB interface {
+	GetTable(string) (Table, error)
+	Resister(Table) error
 }
 
-// NewDB is constructor of DB
-func NewDB() *DB {
-	db := &DB{
-		Tables: make(map[string]Table),
+// Table is interface of table.
+type Table interface {
+	GetRows() []Row
+	Copy() Table
+	SetRows([]Row)
+}
+
+// Row is interface of row of table.
+type Row interface {
+	// GetValueByColName is used in ColRefNode when getting value
+	GetValueByColName(core.ColName) core.Value
+}
+
+// Database is struct for Database
+type Database struct {
+	Tables map[string]DBTable
+}
+
+// NewDatabase is constructor of Database
+func NewDatabase() *Database {
+	db := &Database{
+		Tables: make(map[string]DBTable),
 	}
 	return db
 }
 
 // CreateTable is method to create table
-func (db *DB) CreateTable(tableName string, cols Cols) error {
+func (db *Database) CreateTable(tableName string, cols Cols) error {
 	if _, ok := db.Tables[tableName]; ok {
 		return ErrTableAlreadyExists
 	}
@@ -31,9 +52,9 @@ func (db *DB) CreateTable(tableName string, cols Cols) error {
 		ColNameIndexes[col.ColName] = k
 	}
 
-	db.Tables[tableName] = Table{
+	db.Tables[tableName] = DBTable{
 		Cols:           cols,
-		Rows:           make(Rows, 0),
+		Rows:           make(DBRows, 0),
 		ColNameIndexes: ColNameIndexes,
 	}
 	return nil
@@ -83,16 +104,16 @@ func (cols Cols) Copy() Cols {
 	return newCols
 }
 
-// Row is struct of row of table
-type Row struct {
+// DBRows is struct of row of table
+type DBRow struct {
 	Values core.Values
 }
 
-// Rows is list of Row
-type Rows []Row
+// DBRows is list of DBRow
+type DBRows []DBRow
 
-// Equal checks the equality of Row
-func (r Row) Equal(other Row) bool {
+// Equal checks the equality of DBRow
+func (r DBRow) Equal(other DBRow) bool {
 	if other.Values == nil {
 		return false
 	}
@@ -110,15 +131,15 @@ func (r Row) Equal(other Row) bool {
 	return ok
 }
 
-// Copy copies Row
-func (r Row) Copy() Row {
+// Copy copies DBRow
+func (r DBRow) Copy() DBRow {
 	vals := make(core.Values, len(r.Values))
 	copy(vals, r.Values)
-	return Row{vals}
+	return DBRow{vals}
 }
 
-// Equal checks the equality of Rows
-func (r Rows) Equal(other Rows) bool {
+// Equal checks the equality of DBRows
+func (r DBRows) Equal(other DBRows) bool {
 	if len(r) == len(other) && len(r) == 0 {
 		return true
 	}
@@ -139,14 +160,14 @@ func (r Rows) Equal(other Rows) bool {
 	return ok
 }
 
-// NotEqual checks the non-equality of Rows
-func (r Rows) NotEqual(other Rows) bool {
+// NotEqual checks the non-equality of DBRows
+func (r DBRows) NotEqual(other DBRows) bool {
 	return !r.Equal(other)
 }
 
-// Copy copies Rows
-func (r Rows) Copy() Rows {
-	rows := make(Rows, len(r))
+// Copy copies DBRows
+func (r DBRows) Copy() DBRows {
+	rows := make(DBRows, len(r))
 	for k, row := range r {
 		rows[k] = row.Copy()
 	}
@@ -158,7 +179,7 @@ func (r Rows) Copy() Rows {
 type ColumnID int
 
 // getByID is method to get column value by ColumnID
-func (r *Row) getByID(i ColumnID) core.Value {
+func (r *DBRow) getByID(i ColumnID) core.Value {
 	return r.Values[i]
 }
 
@@ -185,33 +206,33 @@ func (c ColNameIndexes) Copy() ColNameIndexes {
 	return indexes
 }
 
-// Table is struct for Table
-type Table struct {
+// DBTable is struct for DBTable
+type DBTable struct {
 	Cols           Cols
 	ColNameIndexes ColNameIndexes
-	Rows           Rows
+	Rows           DBRows
 }
 
-// Equal checks the equality of Table
-func (t Table) Equal(other Table) bool {
+// Equal checks the equality of DBTable
+func (t DBTable) Equal(other DBTable) bool {
 	return t.Cols.Equal(other.Cols) && t.Rows.Equal(other.Rows) && t.ColNameIndexes.Equal(other.ColNameIndexes)
 }
 
-// NotEqual checks the non-equality of Table
-func (t Table) NotEqual(other Table) bool {
+// NotEqual checks the non-equality of DBTable
+func (t DBTable) NotEqual(other DBTable) bool {
 	return !t.Equal(other)
 }
 
 // Project is method to select columns of table.
-func (t *Table) Project(names core.ColNames) (Rows, error) {
-	returnRows := make(Rows, 0, 10)
+func (t *DBTable) Project(names core.ColNames) (DBRows, error) {
+	returnRows := make(DBRows, 0, 10)
 	idxs, err := t.toIndex(names)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, row := range t.Rows {
-		returnRow := Row{}
+		returnRow := DBRow{}
 		for _, i := range idxs {
 			returnRow.Values = append(returnRow.Values, row.getByID(i))
 		}
@@ -222,7 +243,7 @@ func (t *Table) Project(names core.ColNames) (Rows, error) {
 }
 
 // Rename renames table name
-func (t *Table) Rename(tableName string) {
+func (t *DBTable) Rename(tableName string) {
 	for i := 0; i < len(t.Cols); i++ {
 		col := t.Cols[i]
 		col.ColName.TableName = tableName
@@ -230,16 +251,16 @@ func (t *Table) Rename(tableName string) {
 	}
 }
 
-// Copy copies Table
-func (t *Table) Copy() *Table {
-	return &Table{
+// Copy copies DBTable
+func (t *DBTable) Copy() *DBTable {
+	return &DBTable{
 		Cols:           t.Cols.Copy(),
 		ColNameIndexes: t.ColNameIndexes.Copy(),
 		Rows:           t.Rows.Copy(),
 	}
 }
 
-func (t *Table) toIndex(names core.ColNames) ([]ColumnID, error) {
+func (t *DBTable) toIndex(names core.ColNames) ([]ColumnID, error) {
 	idxs := make([]ColumnID, 0, len(names))
 	for _, name := range names {
 		if val, ok := t.ColNameIndexes[name]; ok {
@@ -253,7 +274,7 @@ func (t *Table) toIndex(names core.ColNames) ([]ColumnID, error) {
 }
 
 // Insert is method to insert record into table.
-func (t *Table) Insert(cols Cols, inputValsList core.ValuesList) error {
+func (t *DBTable) Insert(cols Cols, inputValsList core.ValuesList) error {
 	if cols == nil {
 		cols = t.Cols
 	}
@@ -277,13 +298,13 @@ func (t *Table) Insert(cols Cols, inputValsList core.ValuesList) error {
 		for vi := range idxs {
 			tvalues[vi] = vals[vi]
 		}
-		t.Rows = append(t.Rows, Row{Values: tvalues})
+		t.Rows = append(t.Rows, DBRow{Values: tvalues})
 	}
 
 	return nil
 }
 
-func (t *Table) validateInsert(cols Cols, valuesList core.ValuesList) error {
+func (t *DBTable) validateInsert(cols Cols, valuesList core.ValuesList) error {
 	// TODO: valuesList の各要素の長さが全部同じかチェックする
 	if len(t.Cols) != len(valuesList[0]) {
 		return errors.New("invalid insert elements")

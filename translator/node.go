@@ -1,29 +1,9 @@
 package translator
 
 import (
+	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
 )
-
-//go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock
-
-// DB is interface of DBMS
-type DB interface {
-	GetTable(string) Table
-	Resister(Table)
-}
-
-// Table is interface of table.
-type Table interface {
-	GetRows() []Row
-	Copy() Table
-	SetRows([]Row)
-}
-
-// Row is interface of row of table.
-type Row interface {
-	// GetValueByColName is used in ColRefNode when getting value
-	GetValueByColName(core.ColName) core.Value
-}
 
 // BoolType express SQL boolean including Null
 type BoolType int
@@ -52,7 +32,7 @@ const (
 
 // RelationalAlgebraNode is interface of RelationalAlgebraNode
 type RelationalAlgebraNode interface {
-	Eval(DB) Table
+	Eval(backend.DB) backend.Table
 }
 
 // WhereNode is Node of where clause
@@ -67,17 +47,26 @@ type TableNode struct {
 }
 
 // Eval evaluates TableNode
-func (t *TableNode) Eval(db DB) Table {
-	return db.GetTable(t.TableName)
+func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
+	tb, err := db.GetTable(t.TableName)
+	if err != nil {
+		return nil, err
+	}
+
+	return tb, err
 }
 
 // Eval evaluate WhereNode
-func (wn *WhereNode) Eval(db DB) Table {
-	newTable := wn.Table.Eval(db).Copy()
-	srcRows := newTable.GetRows()
+func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
+	newTable, err := wn.Table.Eval(db)
+	if err != nil {
+		return nil, err
+	}
+
+	srcRows := newTable.Copy().GetRows()
 	condFunc := wn.Condition.Eval()
 
-	rows := make([]Row, 0, len(srcRows))
+	rows := make([]backend.Row, 0, len(srcRows))
 	for _, row := range srcRows {
 		if condFunc(row) == True {
 			rows = append(rows, row)
@@ -86,12 +75,12 @@ func (wn *WhereNode) Eval(db DB) Table {
 
 	newTable.SetRows(rows)
 
-	return newTable
+	return newTable, nil
 }
 
 // WhereExpr is interface of boolean expression
 type WhereExpr interface {
-	Eval() func(row Row) core.Value
+	Eval() func(row backend.Row) core.Value
 }
 
 // BoolConstNode is expression of boolean const
@@ -100,8 +89,8 @@ type BoolConstNode struct {
 }
 
 // Eval evaluates BoolConstNode
-func (b BoolConstNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (b BoolConstNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		return b.Bool
 	}
 }
@@ -112,8 +101,8 @@ type IntegerNode struct {
 }
 
 // Eval evaluates IntegerNode
-func (i IntegerNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (i IntegerNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		return i.Val
 	}
 }
@@ -124,8 +113,8 @@ type ColRefNode struct {
 }
 
 // Eval evaluates ColRefNode
-func (i ColRefNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (i ColRefNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		return row.GetValueByColName(i.ColName)
 	}
 }
@@ -136,8 +125,8 @@ type NotNode struct {
 }
 
 // Eval evaluates NotNode
-func (nn NotNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (nn NotNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		return Not(nn.Expr.Eval()(row))
 	}
 }
@@ -149,8 +138,8 @@ type ORNode struct {
 }
 
 // Eval evaluates ORNode
-func (orn ORNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (orn ORNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		return OR(orn.Lexpr.Eval()(row), orn.Rexpr.Eval()(row))
 	}
 }
@@ -162,8 +151,8 @@ type ANDNode struct {
 }
 
 // Eval evaluates ANDNode
-func (andn ANDNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (andn ANDNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		return AND(andn.Lexpr.Eval()(row), andn.Rexpr.Eval()(row))
 	}
 }
@@ -176,8 +165,8 @@ type BinOpNode struct {
 }
 
 // Eval evaluates BinOpNode
-func (e BinOpNode) Eval() func(Row) core.Value {
-	return func(row Row) core.Value {
+func (e BinOpNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
 		l := e.Lexpr.Eval()(row)
 		r := e.Rexpr.Eval()(row)
 		if l == Null || r == Null {

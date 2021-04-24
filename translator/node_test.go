@@ -4,10 +4,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/goropikari/mysqlite2/backend"
+	"github.com/goropikari/mysqlite2/backend/mock"
 	"github.com/goropikari/mysqlite2/core"
 	"github.com/goropikari/mysqlite2/testing/fake"
 	trans "github.com/goropikari/mysqlite2/translator"
-	"github.com/goropikari/mysqlite2/translator/mock"
 )
 
 func TestORNode(t *testing.T) {
@@ -498,7 +499,7 @@ func TestEvalWhereNode(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			rows := []trans.Row{}
+			rows := []backend.Row{}
 			for _, v := range tt.rowRes {
 				row := mock.NewMockRow(ctrl)
 				row.EXPECT().GetValueByColName(tt.givenName).Return(v).AnyTimes()
@@ -513,7 +514,7 @@ func TestEvalWhereNode(t *testing.T) {
 				ResultCount: &count,
 			}
 			db := mock.NewMockDB(ctrl)
-			db.EXPECT().GetTable(tt.tableName).Return(spyTable).AnyTimes()
+			db.EXPECT().GetTable(tt.tableName).Return(spyTable, nil).AnyTimes()
 
 			whereNode := trans.WhereNode{
 				Condition: tt.condnode,
@@ -531,18 +532,18 @@ func TestEvalWhereNode(t *testing.T) {
 }
 
 type SpyTable struct {
-	Table       trans.Table
+	Table       backend.Table
 	ResultCount *int
 }
 
-func (s *SpyTable) GetRows() []trans.Row {
+func (s *SpyTable) GetRows() []backend.Row {
 	return s.Table.GetRows()
 }
 
-func (s *SpyTable) Copy() trans.Table {
+func (s *SpyTable) Copy() backend.Table {
 	return s
 }
 
-func (s *SpyTable) SetRows(rows []trans.Row) {
+func (s *SpyTable) SetRows(rows []backend.Row) {
 	*s.ResultCount = len(rows)
 }
