@@ -50,20 +50,6 @@ func (mr *MockDBMockRecorder) GetTable(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTable", reflect.TypeOf((*MockDB)(nil).GetTable), arg0)
 }
 
-// Resister mocks base method.
-func (m *MockDB) Resister(arg0 backend.Table) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Resister", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Resister indicates an expected call of Resister.
-func (mr *MockDBMockRecorder) Resister(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resister", reflect.TypeOf((*MockDB)(nil).Resister), arg0)
-}
-
 // MockTable is a mock of Table interface.
 type MockTable struct {
 	ctrl     *gomock.Controller
@@ -162,4 +148,18 @@ func (m *MockRow) GetValueByColName(arg0 core.ColName) core.Value {
 func (mr *MockRowMockRecorder) GetValueByColName(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValueByColName", reflect.TypeOf((*MockRow)(nil).GetValueByColName), arg0)
+}
+
+// GetValues mocks base method.
+func (m *MockRow) GetValues() core.Values {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetValues")
+	ret0, _ := ret[0].(core.Values)
+	return ret0
+}
+
+// GetValues indicates an expected call of GetValues.
+func (mr *MockRowMockRecorder) GetValues() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValues", reflect.TypeOf((*MockRow)(nil).GetValues))
 }

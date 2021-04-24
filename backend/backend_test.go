@@ -24,11 +24,11 @@ func TestTableCopy(t *testing.T) {
 					core.ColName{TableName: "hoge", Name: "id"}:   0,
 					core.ColName{TableName: "hoge", Name: "name"}: 1,
 				},
-				Rows: []DBRow{
-					{
+				Rows: DBRows{
+					&DBRow{
 						Values: core.Values{1, "Hello"},
 					},
-					{
+					&DBRow{
 						Values: core.Values{2, "World"},
 					},
 				},
@@ -39,7 +39,7 @@ func TestTableCopy(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual := tt.given.Copy()
+			actual := tt.given.Copy().(*DBTable) // convert Table to *DBTable
 			actual.Cols[0].ColName.TableName = "piyo"
 			actual.ColNameIndexes[core.ColName{TableName: "hoge", Name: "id"}] = 1
 			actual.Rows[0].Values[0] = "piyo"
@@ -108,7 +108,7 @@ func TestInsert(t *testing.T) {
 			core.ColName{TableName: "hoge", Name: "id"}:   0,
 			core.ColName{TableName: "hoge", Name: "name"}: 1,
 		},
-		Rows: []DBRow{},
+		Rows: DBRows{},
 	}
 
 	var tests = []struct {
@@ -130,7 +130,7 @@ func TestInsert(t *testing.T) {
 					core.ColName{TableName: "hoge", Name: "id"}:   0,
 					core.ColName{TableName: "hoge", Name: "name"}: 1,
 				},
-				Rows: []DBRow{
+				Rows: DBRows{
 					{
 						core.Values{1, "taro"},
 					},
@@ -188,10 +188,10 @@ func TestProject(t *testing.T) {
 					core.ColName{TableName: "hoge", Name: "name"}: 1,
 				},
 				Rows: DBRows{
-					DBRow{
+					{
 						Values: core.Values{1, "Hello"},
 					},
-					DBRow{
+					{
 						Values: core.Values{2, "World"},
 					},
 				},
