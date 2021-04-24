@@ -1,4 +1,4 @@
-test:
+test: mockgen
 	go test $(shell go list ./...)
 
 mockgen:

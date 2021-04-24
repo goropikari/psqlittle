@@ -744,11 +744,11 @@ func (s *SpyTable) SetRows(rows []backend.Row) {
 	*s.ResultCount = len(rows)
 }
 
-func (s *SpyTable) GetColNames() core.ColExprs {
-	return s.Table.GetColNames()
+func (s *SpyTable) GetColExprs() core.ColExprs {
+	return s.Table.GetColExprs()
 }
 
-func (s *SpyTable) SetColNames(names core.ColExprs) {
+func (s *SpyTable) SetColExprs(names core.ColExprs) {
 }
 
 type SpyRow struct {

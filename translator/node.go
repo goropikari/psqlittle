@@ -54,7 +54,7 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 	}
 
 	newTable.SetRows(newRows)
-	newTable.SetColNames(p.TargetCols)
+	newTable.SetColExprs(p.TargetCols)
 	// TODO: implement SetCols if type validation is implemented
 	// newTable.SetCols(cols)
 

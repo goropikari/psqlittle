@@ -12,6 +12,17 @@ const (
 type ColExpr struct {
 	TableName string
 	Name      string
+	SubExpr   *SubExpr
+}
+
+// SubExpr is expression of constant value
+type SubExpr struct {
+	Value Value
+}
+
+// Eval evaluates SubExpr
+func (e *SubExpr) Eval() Value {
+	return e.Value
 }
 
 // Copy copies ColExpr

@@ -87,18 +87,18 @@ func (mr *MockTableMockRecorder) Copy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Copy", reflect.TypeOf((*MockTable)(nil).Copy))
 }
 
-// GetColNames mocks base method.
-func (m *MockTable) GetColNames() core.ColExprs {
+// GetColExprs mocks base method.
+func (m *MockTable) GetColExprs() core.ColExprs {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetColNames")
+	ret := m.ctrl.Call(m, "GetColExprs")
 	ret0, _ := ret[0].(core.ColExprs)
 	return ret0
 }
 
-// GetColNames indicates an expected call of GetColNames.
-func (mr *MockTableMockRecorder) GetColNames() *gomock.Call {
+// GetColExprs indicates an expected call of GetColExprs.
+func (mr *MockTableMockRecorder) GetColExprs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColNames", reflect.TypeOf((*MockTable)(nil).GetColNames))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColExprs", reflect.TypeOf((*MockTable)(nil).GetColExprs))
 }
 
 // GetRows mocks base method.
@@ -115,16 +115,16 @@ func (mr *MockTableMockRecorder) GetRows() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRows", reflect.TypeOf((*MockTable)(nil).GetRows))
 }
 
-// SetColNames mocks base method.
-func (m *MockTable) SetColNames(arg0 core.ColExprs) {
+// SetColExprs mocks base method.
+func (m *MockTable) SetColExprs(arg0 core.ColExprs) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetColNames", arg0)
+	m.ctrl.Call(m, "SetColExprs", arg0)
 }
 
-// SetColNames indicates an expected call of SetColNames.
-func (mr *MockTableMockRecorder) SetColNames(arg0 interface{}) *gomock.Call {
+// SetColExprs indicates an expected call of SetColExprs.
+func (mr *MockTableMockRecorder) SetColExprs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetColNames", reflect.TypeOf((*MockTable)(nil).SetColNames), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetColExprs", reflect.TypeOf((*MockTable)(nil).SetColExprs), arg0)
 }
 
 // SetRows mocks base method.

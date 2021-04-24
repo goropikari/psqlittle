@@ -17,8 +17,8 @@ type DB interface {
 // Table is interface of table.
 type Table interface {
 	Copy() Table
-	GetColNames() core.ColExprs
-	SetColNames(core.ColExprs)
+	GetColExprs() core.ColExprs
+	SetColExprs(core.ColExprs)
 	GetRows() []Row
 	SetRows([]Row)
 	// GetCols() []Col
@@ -134,7 +134,15 @@ type DBRow struct {
 type DBRows []*DBRow
 
 // GetValueByColExpr gets value from row by ColName
-func (r *DBRow) GetValueByColExpr(name core.ColExpr) core.Value {
+func (r *DBRow) GetValueByColExpr(expr core.ColExpr) core.Value {
+	if expr.SubExpr != nil {
+		return expr.SubExpr.Eval()
+	}
+
+	return r.getValueByColName(expr)
+}
+
+func (r *DBRow) getValueByColName(name core.ColExpr) core.Value {
 	for k, v := range r.ColNames {
 		if v == name {
 			return r.Values[k]
@@ -270,13 +278,13 @@ func (t *DBTable) Copy() Table {
 	}
 }
 
-// GetColNames return column names of table
-func (t *DBTable) GetColNames() core.ColExprs {
+// GetColExprs return column names of table
+func (t *DBTable) GetColExprs() core.ColExprs {
 	return t.ColNames
 }
 
-// SetColNames sets ColNames in Table
-func (t *DBTable) SetColNames(names core.ColExprs) {
+// SetColExprs sets ColNames in Table
+func (t *DBTable) SetColExprs(names core.ColExprs) {
 	t.ColNames = names
 }
 
