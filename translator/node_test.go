@@ -9,6 +9,7 @@ import (
 	"github.com/goropikari/mysqlite2/core"
 	"github.com/goropikari/mysqlite2/testing/fake"
 	trans "github.com/goropikari/mysqlite2/translator"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestORNode(t *testing.T) {
@@ -604,14 +605,14 @@ func TestEvalWhereNode(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			rows := []backend.Row{}
+			mockRows := []backend.Row{}
 			for _, v := range tt.rowRes {
 				row := mock.NewMockRow(ctrl)
 				row.EXPECT().GetValueByColName(tt.givenName).Return(v).AnyTimes()
-				rows = append(rows, row)
+				mockRows = append(mockRows, row)
 			}
 			table := mock.NewMockTable(ctrl)
-			table.EXPECT().GetRows().Return(rows).AnyTimes()
+			table.EXPECT().GetRows().Return(mockRows).AnyTimes()
 
 			count := 0
 			spyTable := &SpyTable{
@@ -623,7 +624,7 @@ func TestEvalWhereNode(t *testing.T) {
 
 			whereNode := trans.WhereNode{
 				Condition: tt.condnode,
-				Table: trans.TableNode{
+				Table: &trans.TableNode{
 					TableName: tt.tableName,
 				},
 			}
@@ -636,19 +637,133 @@ func TestEvalWhereNode(t *testing.T) {
 	}
 }
 
+func TestEvalProjectionNode(t *testing.T) {
+
+	cn1 := core.ColName{
+		TableName: "hoge",
+		Name:      "id",
+	}
+	cn2 := core.ColName{
+		TableName: "hoge",
+		Name:      "name",
+	}
+
+	var tests = []struct {
+		name               string
+		targetCols         core.ColNames
+		table              trans.RelationalAlgebraNode
+		tableName          string
+		tableColNames      core.ColNames
+		rowRes             core.ValuesList
+		expectedRowNum     int
+		expectedValuesList core.ValuesList
+	}{
+		{
+			name:       "select id",
+			targetCols: core.ColNames{cn2, cn1},
+			table: &trans.TableNode{
+				TableName: "hoge",
+			},
+			tableName:     "hoge",
+			tableColNames: core.ColNames{cn1, cn2},
+			rowRes: core.ValuesList{
+				{123, "foo"},
+				{456, "bar"},
+				{789, "baz"},
+			},
+			expectedRowNum: 3,
+			expectedValuesList: core.ValuesList{
+				{"foo", 123},
+				{"bar", 456},
+				{"baz", 789},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mockRows := []backend.Row{}
+			for _, vals := range tt.rowRes {
+				row := mock.NewMockRow(ctrl)
+				for k, col := range tt.tableColNames {
+					row.EXPECT().GetValueByColName(col).Return(vals[k]).AnyTimes()
+				}
+				row.EXPECT().SetValues(gomock.Any()).AnyTimes()
+				mockRows = append(mockRows, &SpyRow{MockRow: row})
+			}
+			table := mock.NewMockTable(ctrl)
+			table.EXPECT().GetRows().Return(mockRows).AnyTimes()
+
+			count := 0
+			spyTable := &SpyTable{
+				Table:       table,
+				ResultCount: &count,
+			}
+			db := mock.NewMockDB(ctrl)
+			db.EXPECT().GetTable(tt.tableName).Return(spyTable, nil).AnyTimes()
+
+			projectNode := trans.ProjectionNode{
+				TargetCols: tt.targetCols,
+				Table:      tt.table,
+			}
+
+			projectNode.Eval(db)
+
+			if count != tt.expectedRowNum {
+				t.Errorf("expected %v, actual %v", tt.expectedRowNum, count)
+			}
+
+			resValsList := make(core.ValuesList, 0, len(mockRows))
+			for _, row := range mockRows {
+				resValsList = append(resValsList, row.(*SpyRow).Values)
+			}
+			assert.Equal(t, tt.expectedValuesList, resValsList)
+		})
+	}
+}
+
 type SpyTable struct {
 	Table       backend.Table
 	ResultCount *int
-}
-
-func (s *SpyTable) GetRows() []backend.Row {
-	return s.Table.GetRows()
+	Values      core.ValuesList
 }
 
 func (s *SpyTable) Copy() backend.Table {
 	return s
 }
 
+func (s *SpyTable) GetRows() []backend.Row {
+	return s.Table.GetRows()
+}
+
 func (s *SpyTable) SetRows(rows []backend.Row) {
 	*s.ResultCount = len(rows)
+}
+
+func (s *SpyTable) GetColNames() core.ColNames {
+	return s.Table.GetColNames()
+}
+
+func (s *SpyTable) SetColNames(names core.ColNames) {
+}
+
+type SpyRow struct {
+	MockRow backend.Row
+	Values  core.Values
+}
+
+func (r *SpyRow) GetValueByColName(name core.ColName) core.Value {
+	return r.MockRow.GetValueByColName(name)
+}
+
+func (r *SpyRow) GetValues() core.Values {
+	return r.MockRow.GetValues()
+}
+
+func (r *SpyRow) SetValues(values core.Values) {
+	r.Values = values
 }

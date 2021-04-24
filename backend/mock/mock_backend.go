@@ -87,6 +87,20 @@ func (mr *MockTableMockRecorder) Copy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Copy", reflect.TypeOf((*MockTable)(nil).Copy))
 }
 
+// GetColNames mocks base method.
+func (m *MockTable) GetColNames() core.ColNames {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetColNames")
+	ret0, _ := ret[0].(core.ColNames)
+	return ret0
+}
+
+// GetColNames indicates an expected call of GetColNames.
+func (mr *MockTableMockRecorder) GetColNames() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColNames", reflect.TypeOf((*MockTable)(nil).GetColNames))
+}
+
 // GetRows mocks base method.
 func (m *MockTable) GetRows() []backend.Row {
 	m.ctrl.T.Helper()
@@ -99,6 +113,18 @@ func (m *MockTable) GetRows() []backend.Row {
 func (mr *MockTableMockRecorder) GetRows() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRows", reflect.TypeOf((*MockTable)(nil).GetRows))
+}
+
+// SetColNames mocks base method.
+func (m *MockTable) SetColNames(arg0 core.ColNames) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetColNames", arg0)
+}
+
+// SetColNames indicates an expected call of SetColNames.
+func (mr *MockTableMockRecorder) SetColNames(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetColNames", reflect.TypeOf((*MockTable)(nil).SetColNames), arg0)
 }
 
 // SetRows mocks base method.
@@ -162,4 +188,16 @@ func (m *MockRow) GetValues() core.Values {
 func (mr *MockRowMockRecorder) GetValues() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValues", reflect.TypeOf((*MockRow)(nil).GetValues))
+}
+
+// SetValues mocks base method.
+func (m *MockRow) SetValues(arg0 core.Values) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetValues", arg0)
+}
+
+// SetValues indicates an expected call of SetValues.
+func (mr *MockRowMockRecorder) SetValues(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetValues", reflect.TypeOf((*MockRow)(nil).SetValues), arg0)
 }

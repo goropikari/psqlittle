@@ -14,8 +14,26 @@ type ColName struct {
 	Name      string
 }
 
+// Copy copies ColName
+func (cn ColName) Copy() ColName {
+	return ColName{
+		TableName: cn.TableName,
+		Name:      cn.Name,
+	}
+}
+
 // ColNames is list of ColName
 type ColNames []ColName
+
+// Copy copies ColNames
+func (cn ColNames) Copy() ColNames {
+	colNames := make(ColNames, 0, len(cn))
+	for _, name := range colNames {
+		colNames = append(colNames, name.Copy())
+	}
+
+	return colNames
+}
 
 // Equal checks the equality of ColName
 func (name ColName) Equal(other ColName) bool {

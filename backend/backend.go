@@ -16,9 +16,13 @@ type DB interface {
 
 // Table is interface of table.
 type Table interface {
-	GetRows() []Row
 	Copy() Table
+	GetColNames() core.ColNames
+	SetColNames(core.ColNames)
+	GetRows() []Row
 	SetRows([]Row)
+	// GetCols() []Col
+	// SetCols([]Col)
 }
 
 // Row is interface of row of table.
@@ -26,6 +30,7 @@ type Row interface {
 	// GetValueByColName is used in ColRefNode when getting value
 	GetValueByColName(core.ColName) core.Value
 	GetValues() core.Values
+	SetValues(core.Values)
 }
 
 // Database is struct for Database
@@ -143,6 +148,11 @@ func (r *DBRow) GetValues() core.Values {
 	return r.Values
 }
 
+// SetValues sets vals into row
+func (r *DBRow) SetValues(vals core.Values) {
+	r.Values = vals
+}
+
 // Equal checks the equality of DBRow
 func (r *DBRow) Equal(other *DBRow) bool {
 	if other.Values == nil {
@@ -250,6 +260,26 @@ type DBTable struct {
 	Rows           DBRows
 }
 
+// Copy copies DBTable
+func (t *DBTable) Copy() Table {
+	return &DBTable{
+		ColNames:       t.ColNames.Copy(),
+		Cols:           t.Cols.Copy(),
+		ColNameIndexes: t.ColNameIndexes.Copy(),
+		Rows:           t.Rows.Copy(),
+	}
+}
+
+// GetColNames return column names of table
+func (t *DBTable) GetColNames() core.ColNames {
+	return t.ColNames
+}
+
+// SetColNames sets ColNames in Table
+func (t *DBTable) SetColNames(names core.ColNames) {
+	t.ColNames = names
+}
+
 // GetRows gets rows from given table
 func (t *DBTable) GetRows() []Row {
 	// ref: https://stackoverflow.com/a/12994852
@@ -259,15 +289,6 @@ func (t *DBTable) GetRows() []Row {
 	}
 
 	return rows
-}
-
-// Copy copies DBTable
-func (t *DBTable) Copy() Table {
-	return &DBTable{
-		Cols:           t.Cols.Copy(),
-		ColNameIndexes: t.ColNameIndexes.Copy(),
-		Rows:           t.Rows.Copy(),
-	}
 }
 
 // SetRows replate rows
