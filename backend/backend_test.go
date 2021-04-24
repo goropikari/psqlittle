@@ -115,7 +115,7 @@ func TestInsert(t *testing.T) {
 		name          string
 		expected      DBTable
 		given         DBTable
-		givenCols     Cols
+		givenColNames core.ColNames
 		givenValsList core.ValuesList
 	}{
 		{
@@ -132,16 +132,20 @@ func TestInsert(t *testing.T) {
 				},
 				Rows: DBRows{
 					{
-						core.Values{1, "taro"},
+						ColNames: core.ColNames{
+							{TableName: "hoge", Name: "id"},
+							{TableName: "hoge", Name: "name"},
+						},
+						Values: core.Values{1, "taro"},
 					},
 					{
-						core.Values{2, "hanako"},
+						Values: core.Values{2, "hanako"},
 					},
 				},
 			},
-			givenCols: Cols{
-				{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-				{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+			givenColNames: core.ColNames{
+				{TableName: "hoge", Name: "id"},
+				{TableName: "hoge", Name: "name"},
 			},
 			givenValsList: []core.Values{
 				{
@@ -159,7 +163,7 @@ func TestInsert(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			tt.given.Insert(tt.givenCols, tt.givenValsList)
+			tt.given.Insert(tt.givenColNames, tt.givenValsList)
 
 			if !tt.given.Equal(tt.expected) {
 				t.Errorf("expected %v, actual %v", tt.expected, tt.given)

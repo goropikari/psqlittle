@@ -46,12 +46,18 @@ func (db *Database) CreateTable(tableName string, cols Cols) error {
 		return ErrTableAlreadyExists
 	}
 
+	colNames := make(core.ColNames, 0, len(cols))
+	for _, col := range cols {
+		colNames = append(colNames, col.ColName)
+	}
+
 	ColNameIndexes := make(ColNameIndexes)
 	for k, col := range cols {
 		ColNameIndexes[col.ColName] = k
 	}
 
 	db.Tables[tableName] = &DBTable{
+		ColNames:       colNames,
 		Cols:           cols,
 		Rows:           make(DBRows, 0),
 		ColNameIndexes: ColNameIndexes,
@@ -115,7 +121,8 @@ func (cols Cols) Copy() Cols {
 
 // DBRow is struct of row of table
 type DBRow struct {
-	Values core.Values
+	ColNames core.ColNames
+	Values   core.Values
 }
 
 // DBRows is list of DBRow
@@ -123,8 +130,12 @@ type DBRows []*DBRow
 
 // GetValueByColName gets value from row by ColName
 func (r *DBRow) GetValueByColName(name core.ColName) core.Value {
-	// TODO: implement
-	return 1
+	for k, v := range r.ColNames {
+		if v == name {
+			return r.Values[k]
+		}
+	}
+	return nil
 }
 
 // GetValues gets values from DBRow
@@ -155,7 +166,12 @@ func (r *DBRow) Equal(other *DBRow) bool {
 func (r *DBRow) Copy() *DBRow {
 	vals := make(core.Values, len(r.Values))
 	copy(vals, r.Values)
-	return &DBRow{vals}
+	names := make(core.ColNames, len(r.ColNames))
+	copy(names, r.ColNames)
+	return &DBRow{
+		ColNames: names,
+		Values:   vals,
+	}
 }
 
 // Equal checks the equality of DBRows
@@ -228,6 +244,7 @@ func (c ColNameIndexes) Copy() ColNameIndexes {
 
 // DBTable is struct for DBTable
 type DBTable struct {
+	ColNames       core.ColNames
 	Cols           Cols
 	ColNameIndexes ColNameIndexes
 	Rows           DBRows
@@ -235,6 +252,7 @@ type DBTable struct {
 
 // GetRows gets rows from given table
 func (t *DBTable) GetRows() []Row {
+	// ref: https://stackoverflow.com/a/12994852
 	rows := make([]Row, 0, len(t.Rows))
 	for _, row := range t.Rows {
 		rows = append(rows, row)
@@ -314,21 +332,17 @@ func (t *DBTable) toIndex(names core.ColNames) ([]ColumnID, error) {
 }
 
 // Insert is method to insert record into table.
-func (t *DBTable) Insert(targetCols Cols, inputValsList core.ValuesList) error {
-	if targetCols == nil {
-		targetCols = t.Cols
+func (t *DBTable) Insert(targetColNames core.ColNames, inputValsList core.ValuesList) error {
+	if targetColNames == nil {
+		targetColNames = t.ColNames
 	}
 
-	if err := t.validateInsert(targetCols, inputValsList); err != nil {
+	if err := t.validateInsert(targetColNames, inputValsList); err != nil {
 		return err
 	}
 
 	numCols := len(t.Cols)
-	colNames := make(core.ColNames, 0, numCols)
-	for _, col := range targetCols {
-		colNames = append(colNames, col.ColName)
-	}
-	idxs, err := t.toIndex(colNames)
+	idxs, err := t.toIndex(targetColNames)
 	if err != nil {
 		return err
 	}
@@ -339,7 +353,10 @@ func (t *DBTable) Insert(targetCols Cols, inputValsList core.ValuesList) error {
 		for vi := range idxs {
 			tvalues[vi] = vals[vi]
 		}
-		rows = append(rows, &DBRow{Values: tvalues})
+		rows = append(rows, &DBRow{
+			ColNames: t.ColNames,
+			Values:   tvalues,
+		})
 	}
 
 	t.Rows = rows
@@ -347,10 +364,10 @@ func (t *DBTable) Insert(targetCols Cols, inputValsList core.ValuesList) error {
 	return nil
 }
 
-func (t *DBTable) validateInsert(cols Cols, valuesList core.ValuesList) error {
+func (t *DBTable) validateInsert(names core.ColNames, valuesList core.ValuesList) error {
 	// TODO: valuesList の各要素の長さが全部同じかチェックする
 	for _, vals := range valuesList {
-		if len(t.Cols) != len(vals) {
+		if len(names) != len(vals) {
 			return errors.New("invalid insert elements")
 		}
 	}
