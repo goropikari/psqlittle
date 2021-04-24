@@ -38,13 +38,13 @@ func (i IntegerNode) Eval() func(backend.Row) core.Value {
 
 // ColRefNode is expression of integer
 type ColRefNode struct {
-	ColName core.ColName
+	ColName core.ColExpr
 }
 
 // Eval evaluates ColRefNode
 func (i ColRefNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
-		val := row.GetValueByColName(i.ColName)
+		val := row.GetValueByColExpr(i.ColName)
 		if val != nil {
 			return val
 		}

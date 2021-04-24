@@ -7,8 +7,8 @@ import (
 )
 
 // ColName generates fake ColName
-func ColName() core.ColName {
-	return core.ColName{
+func ColName() core.ColExpr {
+	return core.ColExpr{
 		TableName: RandString(),
 		Name:      RandString(),
 	}

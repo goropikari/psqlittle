@@ -29,7 +29,7 @@ func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
 
 // ProjectionNode is Node of projection operation
 type ProjectionNode struct {
-	TargetCols core.ColNames
+	TargetCols core.ColExprs
 	Table      RelationalAlgebraNode
 }
 
@@ -47,7 +47,7 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 	for _, row := range rows {
 		vals := make(core.Values, 0, len(p.TargetCols))
 		for _, colName := range p.TargetCols {
-			vals = append(vals, row.GetValueByColName(colName))
+			vals = append(vals, row.GetValueByColExpr(colName))
 		}
 		row.SetValues(vals)
 		newRows = append(newRows, row)

@@ -17,8 +17,8 @@ type DB interface {
 // Table is interface of table.
 type Table interface {
 	Copy() Table
-	GetColNames() core.ColNames
-	SetColNames(core.ColNames)
+	GetColNames() core.ColExprs
+	SetColNames(core.ColExprs)
 	GetRows() []Row
 	SetRows([]Row)
 	// GetCols() []Col
@@ -27,8 +27,8 @@ type Table interface {
 
 // Row is interface of row of table.
 type Row interface {
-	// GetValueByColName is used in ColRefNode when getting value
-	GetValueByColName(core.ColName) core.Value
+	// GetValueByColExpr is used in ColRefNode when getting value
+	GetValueByColExpr(core.ColExpr) core.Value
 	GetValues() core.Values
 	SetValues(core.Values)
 }
@@ -51,7 +51,7 @@ func (db *Database) CreateTable(tableName string, cols Cols) error {
 		return ErrTableAlreadyExists
 	}
 
-	colNames := make(core.ColNames, 0, len(cols))
+	colNames := make(core.ColExprs, 0, len(cols))
 	for _, col := range cols {
 		colNames = append(colNames, col.ColName)
 	}
@@ -82,7 +82,7 @@ func (db *Database) GetTable(tableName string) (Table, error) {
 
 // Col is type of column
 type Col struct {
-	ColName core.ColName
+	ColName core.ColExpr
 	ColType core.ColType
 }
 
@@ -126,15 +126,15 @@ func (cols Cols) Copy() Cols {
 
 // DBRow is struct of row of table
 type DBRow struct {
-	ColNames core.ColNames
+	ColNames core.ColExprs
 	Values   core.Values
 }
 
 // DBRows is list of DBRow
 type DBRows []*DBRow
 
-// GetValueByColName gets value from row by ColName
-func (r *DBRow) GetValueByColName(name core.ColName) core.Value {
+// GetValueByColExpr gets value from row by ColName
+func (r *DBRow) GetValueByColExpr(name core.ColExpr) core.Value {
 	for k, v := range r.ColNames {
 		if v == name {
 			return r.Values[k]
@@ -176,7 +176,7 @@ func (r *DBRow) Equal(other *DBRow) bool {
 func (r *DBRow) Copy() *DBRow {
 	vals := make(core.Values, len(r.Values))
 	copy(vals, r.Values)
-	names := make(core.ColNames, len(r.ColNames))
+	names := make(core.ColExprs, len(r.ColNames))
 	copy(names, r.ColNames)
 	return &DBRow{
 		ColNames: names,
@@ -230,7 +230,7 @@ func (r *DBRow) getByID(i ColumnID) core.Value {
 }
 
 // ColNameIndexes is map ColName to corresponding column index
-type ColNameIndexes map[core.ColName]int
+type ColNameIndexes map[core.ColExpr]int
 
 // Equal checks the equality of ColNameIndexes
 func (c ColNameIndexes) Equal(other ColNameIndexes) bool {
@@ -254,7 +254,7 @@ func (c ColNameIndexes) Copy() ColNameIndexes {
 
 // DBTable is struct for DBTable
 type DBTable struct {
-	ColNames       core.ColNames
+	ColNames       core.ColExprs
 	Cols           Cols
 	ColNameIndexes ColNameIndexes
 	Rows           DBRows
@@ -271,12 +271,12 @@ func (t *DBTable) Copy() Table {
 }
 
 // GetColNames return column names of table
-func (t *DBTable) GetColNames() core.ColNames {
+func (t *DBTable) GetColNames() core.ColExprs {
 	return t.ColNames
 }
 
 // SetColNames sets ColNames in Table
-func (t *DBTable) SetColNames(names core.ColNames) {
+func (t *DBTable) SetColNames(names core.ColExprs) {
 	t.ColNames = names
 }
 
@@ -312,7 +312,7 @@ func (t DBTable) NotEqual(other DBTable) bool {
 }
 
 // Project is method to select columns of table.
-func (t *DBTable) Project(names core.ColNames) (DBRows, error) {
+func (t *DBTable) Project(names core.ColExprs) (DBRows, error) {
 	returnRows := make(DBRows, 0, 10)
 	idxs, err := t.toIndex(names)
 	if err != nil {
@@ -339,7 +339,7 @@ func (t *DBTable) Rename(tableName string) {
 	}
 }
 
-func (t *DBTable) toIndex(names core.ColNames) ([]ColumnID, error) {
+func (t *DBTable) toIndex(names core.ColExprs) ([]ColumnID, error) {
 	idxs := make([]ColumnID, 0, len(names))
 	for _, name := range names {
 		if val, ok := t.ColNameIndexes[name]; ok {
@@ -353,7 +353,7 @@ func (t *DBTable) toIndex(names core.ColNames) ([]ColumnID, error) {
 }
 
 // Insert is method to insert record into table.
-func (t *DBTable) Insert(targetColNames core.ColNames, inputValsList core.ValuesList) error {
+func (t *DBTable) Insert(targetColNames core.ColExprs, inputValsList core.ValuesList) error {
 	if targetColNames == nil {
 		targetColNames = t.ColNames
 	}
@@ -385,7 +385,7 @@ func (t *DBTable) Insert(targetColNames core.ColNames, inputValsList core.Values
 	return nil
 }
 
-func (t *DBTable) validateInsert(names core.ColNames, valuesList core.ValuesList) error {
+func (t *DBTable) validateInsert(names core.ColExprs, valuesList core.ValuesList) error {
 	// TODO: valuesList の各要素の長さが全部同じかチェックする
 	for _, vals := range valuesList {
 		if len(names) != len(vals) {

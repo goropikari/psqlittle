@@ -17,12 +17,12 @@ func TestTableCopy(t *testing.T) {
 			name: "test insert",
 			given: DBTable{
 				Cols: Cols{
-					{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-					{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+					{core.ColExpr{TableName: "hoge", Name: "id"}, core.Integer},
+					{core.ColExpr{TableName: "hoge", Name: "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					core.ColName{TableName: "hoge", Name: "id"}:   0,
-					core.ColName{TableName: "hoge", Name: "name"}: 1,
+					core.ColExpr{TableName: "hoge", Name: "id"}:   0,
+					core.ColExpr{TableName: "hoge", Name: "name"}: 1,
 				},
 				Rows: DBRows{
 					&DBRow{
@@ -41,7 +41,7 @@ func TestTableCopy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.given.Copy().(*DBTable) // convert Table to *DBTable
 			actual.Cols[0].ColName.TableName = "piyo"
-			actual.ColNameIndexes[core.ColName{TableName: "hoge", Name: "id"}] = 1
+			actual.ColNameIndexes[core.ColExpr{TableName: "hoge", Name: "id"}] = 1
 			actual.Rows[0].Values[0] = "piyo"
 
 			if !actual.NotEqual(tt.given) {
@@ -67,17 +67,17 @@ func TestCreate(t *testing.T) {
 			givenDB:        db,
 			givenTableName: "hoge",
 			givenCols: Cols{
-				{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-				{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+				{core.ColExpr{TableName: "hoge", Name: "id"}, core.Integer},
+				{core.ColExpr{TableName: "hoge", Name: "name"}, core.VarChar},
 			},
 			wantedTable: DBTable{
 				Cols: Cols{
-					{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-					{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+					{core.ColExpr{TableName: "hoge", Name: "id"}, core.Integer},
+					{core.ColExpr{TableName: "hoge", Name: "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					core.ColName{TableName: "hoge", Name: "id"}:   0,
-					core.ColName{TableName: "hoge", Name: "name"}: 1,
+					core.ColExpr{TableName: "hoge", Name: "id"}:   0,
+					core.ColExpr{TableName: "hoge", Name: "name"}: 1,
 				},
 			},
 		},
@@ -101,12 +101,12 @@ func TestInsert(t *testing.T) {
 
 	table := DBTable{
 		Cols: Cols{
-			{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-			{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+			{core.ColExpr{TableName: "hoge", Name: "id"}, core.Integer},
+			{core.ColExpr{TableName: "hoge", Name: "name"}, core.VarChar},
 		},
 		ColNameIndexes: ColNameIndexes{
-			core.ColName{TableName: "hoge", Name: "id"}:   0,
-			core.ColName{TableName: "hoge", Name: "name"}: 1,
+			core.ColExpr{TableName: "hoge", Name: "id"}:   0,
+			core.ColExpr{TableName: "hoge", Name: "name"}: 1,
 		},
 		Rows: DBRows{},
 	}
@@ -115,7 +115,7 @@ func TestInsert(t *testing.T) {
 		name          string
 		expected      DBTable
 		given         DBTable
-		givenColNames core.ColNames
+		givenColNames core.ColExprs
 		givenValsList core.ValuesList
 	}{
 		{
@@ -123,16 +123,16 @@ func TestInsert(t *testing.T) {
 			given: table,
 			expected: DBTable{
 				Cols: Cols{
-					{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-					{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+					{core.ColExpr{TableName: "hoge", Name: "id"}, core.Integer},
+					{core.ColExpr{TableName: "hoge", Name: "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					core.ColName{TableName: "hoge", Name: "id"}:   0,
-					core.ColName{TableName: "hoge", Name: "name"}: 1,
+					core.ColExpr{TableName: "hoge", Name: "id"}:   0,
+					core.ColExpr{TableName: "hoge", Name: "name"}: 1,
 				},
 				Rows: DBRows{
 					{
-						ColNames: core.ColNames{
+						ColNames: core.ColExprs{
 							{TableName: "hoge", Name: "id"},
 							{TableName: "hoge", Name: "name"},
 						},
@@ -143,7 +143,7 @@ func TestInsert(t *testing.T) {
 					},
 				},
 			},
-			givenColNames: core.ColNames{
+			givenColNames: core.ColExprs{
 				{TableName: "hoge", Name: "id"},
 				{TableName: "hoge", Name: "name"},
 			},
@@ -178,18 +178,18 @@ func TestProject(t *testing.T) {
 		name          string
 		expected      DBRows
 		givenTable    DBTable
-		givenColNames core.ColNames
+		givenColNames core.ColExprs
 	}{
 		{
 			name: "test project columns",
 			givenTable: DBTable{
 				Cols: Cols{
-					{core.ColName{TableName: "hoge", Name: "id"}, core.Integer},
-					{core.ColName{TableName: "hoge", Name: "name"}, core.VarChar},
+					{core.ColExpr{TableName: "hoge", Name: "id"}, core.Integer},
+					{core.ColExpr{TableName: "hoge", Name: "name"}, core.VarChar},
 				},
 				ColNameIndexes: ColNameIndexes{
-					core.ColName{TableName: "hoge", Name: "id"}:   0,
-					core.ColName{TableName: "hoge", Name: "name"}: 1,
+					core.ColExpr{TableName: "hoge", Name: "id"}:   0,
+					core.ColExpr{TableName: "hoge", Name: "name"}: 1,
 				},
 				Rows: DBRows{
 					{
@@ -200,7 +200,7 @@ func TestProject(t *testing.T) {
 					},
 				},
 			},
-			givenColNames: core.ColNames{
+			givenColNames: core.ColExprs{
 				{TableName: "hoge", Name: "id"},
 				{TableName: "hoge", Name: "name"},
 				{TableName: "hoge", Name: "id"},

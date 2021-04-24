@@ -8,35 +8,35 @@ const (
 	VarChar
 )
 
-// ColName is column name
-type ColName struct {
+// ColExpr is column name
+type ColExpr struct {
 	TableName string
 	Name      string
 }
 
-// Copy copies ColName
-func (cn ColName) Copy() ColName {
-	return ColName{
+// Copy copies ColExpr
+func (cn ColExpr) Copy() ColExpr {
+	return ColExpr{
 		TableName: cn.TableName,
 		Name:      cn.Name,
 	}
 }
 
-// ColNames is list of ColName
-type ColNames []ColName
+// ColExprs is list of ColExpr
+type ColExprs []ColExpr
 
-// Copy copies ColNames
-func (cn ColNames) Copy() ColNames {
-	colNames := make(ColNames, 0, len(cn))
-	for _, name := range colNames {
-		colNames = append(colNames, name.Copy())
+// Copy copies ColExprs
+func (cn ColExprs) Copy() ColExprs {
+	ColExprs := make(ColExprs, 0, len(cn))
+	for _, name := range ColExprs {
+		ColExprs = append(ColExprs, name.Copy())
 	}
 
-	return colNames
+	return ColExprs
 }
 
-// Equal checks the equality of ColName
-func (name ColName) Equal(other ColName) bool {
+// Equal checks the equality of ColExpr
+func (name ColExpr) Equal(other ColExpr) bool {
 	return name.TableName == other.TableName && name.Name == other.Name
 }
 

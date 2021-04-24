@@ -120,7 +120,7 @@ func TestORNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	row := mock.NewMockRow(ctrl)
-	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any()).AnyTimes()
+	row.EXPECT().GetValueByColExpr(gomock.Any()).Return(gomock.Any()).AnyTimes()
 
 	for _, tt := range tests {
 		tt := tt
@@ -269,7 +269,7 @@ func TestANDNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	row := mock.NewMockRow(ctrl)
-	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any()).AnyTimes()
+	row.EXPECT().GetValueByColExpr(gomock.Any()).Return(gomock.Any()).AnyTimes()
 
 	for _, tt := range tests {
 		tt := tt
@@ -345,7 +345,7 @@ func TestNullTestNode(t *testing.T) {
 			node: trans.NullTestNode{
 				TestType: trans.EqualNull,
 				Expr: trans.ColRefNode{
-					ColName: core.ColName{
+					ColName: core.ColExpr{
 						TableName: "hoge",
 						Name:      "id",
 					},
@@ -359,7 +359,7 @@ func TestNullTestNode(t *testing.T) {
 			node: trans.NullTestNode{
 				TestType: trans.EqualNull,
 				Expr: trans.ColRefNode{
-					ColName: core.ColName{
+					ColName: core.ColExpr{
 						TableName: "hoge",
 						Name:      "id",
 					},
@@ -377,7 +377,7 @@ func TestNullTestNode(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			row := mock.NewMockRow(ctrl)
-			row.EXPECT().GetValueByColName(gomock.Any()).Return(tt.rowRes).AnyTimes()
+			row.EXPECT().GetValueByColExpr(gomock.Any()).Return(tt.rowRes).AnyTimes()
 
 			actual := tt.node.Eval()(row)
 			if actual != tt.expected {
@@ -516,7 +516,7 @@ func TestBinOpNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	row := mock.NewMockRow(ctrl)
-	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any()).AnyTimes()
+	row.EXPECT().GetValueByColExpr(gomock.Any()).Return(gomock.Any()).AnyTimes()
 
 	for _, tt := range tests {
 		tt := tt
@@ -536,7 +536,7 @@ func TestEvalColRefNode(t *testing.T) {
 	var tests = []struct {
 		name      string
 		node      trans.WhereExpr
-		givenName core.ColName
+		givenName core.ColExpr
 		expected  interface{}
 	}{
 		{
@@ -556,7 +556,7 @@ func TestEvalColRefNode(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			row := mock.NewMockRow(ctrl)
-			row.EXPECT().GetValueByColName(tt.givenName).Return(tt.expected).AnyTimes()
+			row.EXPECT().GetValueByColExpr(tt.givenName).Return(tt.expected).AnyTimes()
 
 			actual := tt.node.Eval()(row)
 			if actual != tt.expected {
@@ -568,7 +568,7 @@ func TestEvalColRefNode(t *testing.T) {
 
 func TestEvalWhereNode(t *testing.T) {
 
-	cn1 := core.ColName{
+	cn1 := core.ColExpr{
 		TableName: "hoge",
 		Name:      "id",
 	}
@@ -577,7 +577,7 @@ func TestEvalWhereNode(t *testing.T) {
 		name           string
 		condnode       trans.WhereExpr
 		tableName      string
-		givenName      core.ColName
+		givenName      core.ColExpr
 		rowRes         []interface{}
 		expectedRowNum int
 	}{
@@ -608,7 +608,7 @@ func TestEvalWhereNode(t *testing.T) {
 			mockRows := []backend.Row{}
 			for _, v := range tt.rowRes {
 				row := mock.NewMockRow(ctrl)
-				row.EXPECT().GetValueByColName(tt.givenName).Return(v).AnyTimes()
+				row.EXPECT().GetValueByColExpr(tt.givenName).Return(v).AnyTimes()
 				mockRows = append(mockRows, row)
 			}
 			table := mock.NewMockTable(ctrl)
@@ -639,33 +639,33 @@ func TestEvalWhereNode(t *testing.T) {
 
 func TestEvalProjectionNode(t *testing.T) {
 
-	cn1 := core.ColName{
+	cn1 := core.ColExpr{
 		TableName: "hoge",
 		Name:      "id",
 	}
-	cn2 := core.ColName{
+	cn2 := core.ColExpr{
 		TableName: "hoge",
 		Name:      "name",
 	}
 
 	var tests = []struct {
 		name               string
-		targetCols         core.ColNames
+		targetCols         core.ColExprs
 		table              trans.RelationalAlgebraNode
 		tableName          string
-		tableColNames      core.ColNames
+		tableColNames      core.ColExprs
 		rowRes             core.ValuesList
 		expectedRowNum     int
 		expectedValuesList core.ValuesList
 	}{
 		{
 			name:       "select id",
-			targetCols: core.ColNames{cn2, cn1},
+			targetCols: core.ColExprs{cn2, cn1},
 			table: &trans.TableNode{
 				TableName: "hoge",
 			},
 			tableName:     "hoge",
-			tableColNames: core.ColNames{cn1, cn2},
+			tableColNames: core.ColExprs{cn1, cn2},
 			rowRes: core.ValuesList{
 				{123, "foo"},
 				{456, "bar"},
@@ -690,7 +690,7 @@ func TestEvalProjectionNode(t *testing.T) {
 			for _, vals := range tt.rowRes {
 				row := mock.NewMockRow(ctrl)
 				for k, col := range tt.tableColNames {
-					row.EXPECT().GetValueByColName(col).Return(vals[k]).AnyTimes()
+					row.EXPECT().GetValueByColExpr(col).Return(vals[k]).AnyTimes()
 				}
 				row.EXPECT().SetValues(gomock.Any()).AnyTimes()
 				mockRows = append(mockRows, &SpyRow{MockRow: row})
@@ -744,11 +744,11 @@ func (s *SpyTable) SetRows(rows []backend.Row) {
 	*s.ResultCount = len(rows)
 }
 
-func (s *SpyTable) GetColNames() core.ColNames {
+func (s *SpyTable) GetColNames() core.ColExprs {
 	return s.Table.GetColNames()
 }
 
-func (s *SpyTable) SetColNames(names core.ColNames) {
+func (s *SpyTable) SetColNames(names core.ColExprs) {
 }
 
 type SpyRow struct {
@@ -756,8 +756,8 @@ type SpyRow struct {
 	Values  core.Values
 }
 
-func (r *SpyRow) GetValueByColName(name core.ColName) core.Value {
-	return r.MockRow.GetValueByColName(name)
+func (r *SpyRow) GetValueByColExpr(name core.ColExpr) core.Value {
+	return r.MockRow.GetValueByColExpr(name)
 }
 
 func (r *SpyRow) GetValues() core.Values {
