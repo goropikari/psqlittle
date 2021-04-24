@@ -14,7 +14,7 @@ func TestORNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expr
+		node     trans.WhereExpr
 		expected trans.BoolType
 	}{
 		{
@@ -135,7 +135,7 @@ func TestANDNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expr
+		node     trans.WhereExpr
 		expected trans.BoolType
 	}{
 		{
@@ -284,13 +284,13 @@ func TestBinOpNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expr
+		node     trans.WhereExpr
 		expected interface{}
 	}{
 		{
 			name: "1 = 1",
 			node: trans.BinOpNode{
-				Op: trans.Equal,
+				Op: trans.EqualOp,
 				Lexpr: trans.IntegerNode{
 					Val: 1,
 				},
@@ -303,7 +303,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "1 = 2",
 			node: trans.BinOpNode{
-				Op: trans.Equal,
+				Op: trans.EqualOp,
 				Lexpr: trans.IntegerNode{
 					Val: 1,
 				},
@@ -316,7 +316,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "1 != 2",
 			node: trans.BinOpNode{
-				Op: trans.NotEqual,
+				Op: trans.NotEqualOp,
 				Lexpr: trans.IntegerNode{
 					Val: 1,
 				},
@@ -329,7 +329,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "1 = null",
 			node: trans.BinOpNode{
-				Op: trans.Equal,
+				Op: trans.EqualOp,
 				Lexpr: trans.IntegerNode{
 					Val: 1,
 				},
@@ -342,7 +342,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "1 != null",
 			node: trans.BinOpNode{
-				Op: trans.NotEqual,
+				Op: trans.NotEqualOp,
 				Lexpr: trans.IntegerNode{
 					Val: 1,
 				},
@@ -355,7 +355,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "True = True",
 			node: trans.BinOpNode{
-				Op: trans.Equal,
+				Op: trans.EqualOp,
 				Lexpr: trans.BoolConstNode{
 					Bool: trans.True,
 				},
@@ -368,7 +368,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "True = False",
 			node: trans.BinOpNode{
-				Op: trans.Equal,
+				Op: trans.EqualOp,
 				Lexpr: trans.BoolConstNode{
 					Bool: trans.True,
 				},
@@ -381,7 +381,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "True != True",
 			node: trans.BinOpNode{
-				Op: trans.NotEqual,
+				Op: trans.NotEqualOp,
 				Lexpr: trans.BoolConstNode{
 					Bool: trans.True,
 				},
@@ -394,7 +394,7 @@ func TestBinOpNode(t *testing.T) {
 		{
 			name: "True != False",
 			node: trans.BinOpNode{
-				Op: trans.NotEqual,
+				Op: trans.NotEqualOp,
 				Lexpr: trans.BoolConstNode{
 					Bool: trans.True,
 				},
@@ -428,7 +428,7 @@ func TestEvalColRefNode(t *testing.T) {
 
 	var tests = []struct {
 		name      string
-		node      trans.Expr
+		node      trans.WhereExpr
 		givenName core.ColName
 		expected  interface{}
 	}{
@@ -457,4 +457,92 @@ func TestEvalColRefNode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEvalWhereNode(t *testing.T) {
+
+	cn1 := core.ColName{
+		TableName: "hoge",
+		Name:      "id",
+	}
+
+	var tests = []struct {
+		name           string
+		condnode       trans.WhereExpr
+		tableName      string
+		givenName      core.ColName
+		rowRes         []interface{}
+		expectedRowNum int
+	}{
+		{
+			name: "id = 123",
+			condnode: trans.BinOpNode{
+				Op: trans.EqualOp,
+				Lexpr: trans.ColRefNode{
+					ColName: cn1,
+				},
+				Rexpr: trans.IntegerNode{
+					Val: 123,
+				},
+			},
+			tableName:      "hoge",
+			givenName:      cn1,
+			rowRes:         []interface{}{123, 123, 456},
+			expectedRowNum: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			rows := []trans.Row{}
+			for _, v := range tt.rowRes {
+				row := mock.NewMockRow(ctrl)
+				row.EXPECT().GetValueByColName(tt.givenName).Return(v).AnyTimes()
+				rows = append(rows, row)
+			}
+			table := mock.NewMockTable(ctrl)
+			table.EXPECT().GetRows().Return(rows).AnyTimes()
+
+			count := 0
+			spyTable := &SpyTable{
+				Table:       table,
+				ResultCount: &count,
+			}
+			db := mock.NewMockDB(ctrl)
+			db.EXPECT().GetTable(tt.tableName).Return(spyTable).AnyTimes()
+
+			whereNode := trans.WhereNode{
+				Condition: tt.condnode,
+				Table: trans.TableNode{
+					TableName: tt.tableName,
+				},
+			}
+
+			whereNode.Eval(db)
+			if count != tt.expectedRowNum {
+				t.Errorf("expected %v, actual %v", tt.expectedRowNum, count)
+			}
+		})
+	}
+}
+
+type SpyTable struct {
+	Table       trans.Table
+	ResultCount *int
+}
+
+func (s *SpyTable) GetRows() []trans.Row {
+	return s.Table.GetRows()
+}
+
+func (s *SpyTable) Copy() trans.Table {
+	return s
+}
+
+func (s *SpyTable) SetRows(rows []trans.Row) {
+	*s.ResultCount = len(rows)
 }

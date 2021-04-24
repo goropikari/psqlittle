@@ -1,9 +1,27 @@
 package translator
 
-import "github.com/goropikari/mysqlite2/core"
+import (
+	"github.com/goropikari/mysqlite2/core"
+)
+
+//go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock
+
+// DB is interface of DBMS
+type DB interface {
+	GetTable(string) Table
+	Resister(Table)
+}
+
+// Table is interface of table.
+type Table interface {
+	GetRows() []Row
+	Copy() Table
+	SetRows([]Row)
+}
 
 // Row is interface of row of table.
 type Row interface {
+	// GetValueByColName is used in ColRefNode when getting value
 	GetValueByColName(core.ColName) core.Value
 }
 
@@ -25,12 +43,54 @@ const (
 type MathOp int
 
 const (
-	Equal MathOp = iota
-	NotEqual
+	// EqualOp is equal operator
+	EqualOp MathOp = iota
+
+	// NotEqualOp is not equal operator
+	NotEqualOp
 )
 
-// Expr is interface of boolean expression
-type Expr interface {
+// RelationalAlgebraNode is interface of RelationalAlgebraNode
+type RelationalAlgebraNode interface {
+	Eval(DB) Table
+}
+
+// WhereNode is Node of where clause
+type WhereNode struct {
+	Condition WhereExpr
+	Table     TableNode
+}
+
+// TableNode is Node of table
+type TableNode struct {
+	TableName string
+}
+
+// Eval evaluates TableNode
+func (t *TableNode) Eval(db DB) Table {
+	return db.GetTable(t.TableName)
+}
+
+// Eval evaluate WhereNode
+func (wn *WhereNode) Eval(db DB) Table {
+	newTable := wn.Table.Eval(db).Copy()
+	srcRows := newTable.GetRows()
+	condFunc := wn.Condition.Eval()
+
+	rows := make([]Row, 0, len(srcRows))
+	for _, row := range srcRows {
+		if condFunc(row) == True {
+			rows = append(rows, row)
+		}
+	}
+
+	newTable.SetRows(rows)
+
+	return newTable
+}
+
+// WhereExpr is interface of boolean expression
+type WhereExpr interface {
 	Eval() func(row Row) core.Value
 }
 
@@ -72,7 +132,7 @@ func (i ColRefNode) Eval() func(Row) core.Value {
 
 // NotNode is expression of Not
 type NotNode struct {
-	Expr Expr
+	Expr WhereExpr
 }
 
 // Eval evaluates NotNode
@@ -84,8 +144,8 @@ func (nn NotNode) Eval() func(Row) core.Value {
 
 // ORNode is expression of OR
 type ORNode struct {
-	Lexpr Expr
-	Rexpr Expr
+	Lexpr WhereExpr
+	Rexpr WhereExpr
 }
 
 // Eval evaluates ORNode
@@ -97,8 +157,8 @@ func (orn ORNode) Eval() func(Row) core.Value {
 
 // ANDNode is expression of AND
 type ANDNode struct {
-	Lexpr Expr
-	Rexpr Expr
+	Lexpr WhereExpr
+	Rexpr WhereExpr
 }
 
 // Eval evaluates ANDNode
@@ -111,8 +171,8 @@ func (andn ANDNode) Eval() func(Row) core.Value {
 // BinOpNode is expression of BinOpNode
 type BinOpNode struct {
 	Op    MathOp
-	Lexpr Expr
-	Rexpr Expr
+	Lexpr WhereExpr
+	Rexpr WhereExpr
 }
 
 // Eval evaluates BinOpNode
@@ -126,9 +186,9 @@ func (e BinOpNode) Eval() func(Row) core.Value {
 
 		truth := false
 		switch e.Op {
-		case Equal:
+		case EqualOp:
 			truth = l == r
-		case NotEqual:
+		case NotEqualOp:
 			truth = l != r
 		}
 
