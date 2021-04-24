@@ -281,6 +281,111 @@ func TestANDNode(t *testing.T) {
 	}
 }
 
+func TestNullTestNode(t *testing.T) {
+
+	var tests = []struct {
+		name     string
+		node     trans.WhereExpr
+		rowRes   core.Value
+		expected interface{}
+	}{
+		{
+			name: "Null is Null",
+			node: trans.NullTestNode{
+				TestType: trans.EqualNull,
+				Expr: trans.BoolConstNode{
+					Bool: trans.Null,
+				},
+			},
+			expected: trans.True,
+		},
+		{
+			name: "Null is not Null",
+			node: trans.NullTestNode{
+				TestType: trans.NotEqualNull,
+				Expr: trans.BoolConstNode{
+					Bool: trans.Null,
+				},
+			},
+			expected: trans.False,
+		},
+		{
+			name: "0 = Null",
+			node: trans.NullTestNode{
+				TestType: trans.EqualNull,
+				Expr: trans.IntegerNode{
+					Val: 0,
+				},
+			},
+			expected: trans.False,
+		},
+		{
+			name: "1 = Null",
+			node: trans.NullTestNode{
+				TestType: trans.EqualNull,
+				Expr: trans.IntegerNode{
+					Val: 1,
+				},
+			},
+			expected: trans.False,
+		},
+		{
+			name: "2 = Null",
+			node: trans.NullTestNode{
+				TestType: trans.EqualNull,
+				Expr: trans.IntegerNode{
+					Val: 2,
+				},
+			},
+			expected: trans.False,
+		},
+		{
+			name: "id is null (if id's value is null)",
+			node: trans.NullTestNode{
+				TestType: trans.EqualNull,
+				Expr: trans.ColRefNode{
+					ColName: core.ColName{
+						TableName: "hoge",
+						Name:      "id",
+					},
+				},
+			},
+			rowRes:   nil,
+			expected: trans.True,
+		},
+		{
+			name: "id is null (if id's value is 1)",
+			node: trans.NullTestNode{
+				TestType: trans.EqualNull,
+				Expr: trans.ColRefNode{
+					ColName: core.ColName{
+						TableName: "hoge",
+						Name:      "id",
+					},
+				},
+			},
+			rowRes:   1,
+			expected: trans.False,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			row := mock.NewMockRow(ctrl)
+			row.EXPECT().GetValueByColName(gomock.Any()).Return(tt.rowRes).AnyTimes()
+
+			actual := tt.node.Eval()(row)
+			if actual != tt.expected {
+				t.Errorf("expected %v, actual %v", tt.expected, actual)
+			}
+		})
+	}
+}
+
 func TestBinOpNode(t *testing.T) {
 
 	var tests = []struct {

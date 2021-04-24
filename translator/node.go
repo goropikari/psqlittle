@@ -19,6 +19,17 @@ const (
 	Null
 )
 
+// NullTestType is Null test type
+type NullTestType int
+
+const (
+	// EqualNull corresponds to `IS NULL` operation
+	EqualNull NullTestType = iota
+
+	// NotEqualNull corresponds to `IS NOT NULL` operation
+	NotEqualNull
+)
+
 // MathOp express SQL mathemathical operators
 type MathOp int
 
@@ -115,7 +126,11 @@ type ColRefNode struct {
 // Eval evaluates ColRefNode
 func (i ColRefNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
-		return row.GetValueByColName(i.ColName)
+		val := row.GetValueByColName(i.ColName)
+		if val != nil {
+			return val
+		}
+		return Null
 	}
 }
 
@@ -154,6 +169,27 @@ type ANDNode struct {
 func (andn ANDNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
 		return AND(andn.Lexpr.Eval()(row), andn.Rexpr.Eval()(row))
+	}
+}
+
+// NullTestNode is expression of `IS (NOT) NULL`
+type NullTestNode struct {
+	TestType NullTestType
+	Expr     WhereExpr
+}
+
+// Eval evaluates NullTestNode
+func (n NullTestNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
+		val := n.Expr.Eval()(row)
+		truth := False
+		if val == Null {
+			truth = True
+		}
+		if n.TestType == EqualNull {
+			return truth
+		}
+		return Not(truth)
 	}
 }
 
