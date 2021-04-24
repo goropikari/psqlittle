@@ -31,6 +31,7 @@ type Row interface {
 	GetValueByColName(core.ColumnName) core.Value
 	GetValues() core.Values
 	SetValues(core.Values)
+	SetColNames(core.ColumnNames)
 }
 
 // Database is struct for Database
@@ -151,6 +152,11 @@ func (r *DBRow) GetValues() core.Values {
 // SetValues sets vals into row
 func (r *DBRow) SetValues(vals core.Values) {
 	r.Values = vals
+}
+
+// SetColNames sets column names into row
+func (r *DBRow) SetColNames(names core.ColumnNames) {
+	r.ColNames = names
 }
 
 // Equal checks the equality of DBRow

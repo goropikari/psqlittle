@@ -29,8 +29,9 @@ func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
 
 // ProjectionNode is Node of projection operation
 type ProjectionNode struct {
-	TargetCols core.ColumnNames
-	Table      RelationalAlgebraNode
+	ResTargets     []Expression
+	TargetColNames core.ColumnNames
+	Table          RelationalAlgebraNode
 }
 
 // Eval evaluates ProjectionNode
@@ -39,22 +40,27 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	newTable := tb.Copy()
+
+	resFuncs := make([]func(backend.Row) core.Value, 0, len(p.ResTargets))
+	for _, target := range p.ResTargets {
+		resFuncs = append(resFuncs, target.Eval())
+	}
 
 	rows := newTable.GetRows()
 	newRows := make([]backend.Row, 0, len(rows))
 	for _, row := range rows {
-		vals := make(core.Values, 0, len(p.TargetCols))
-		for _, colName := range p.TargetCols {
-			vals = append(vals, row.GetValueByColName(colName))
+		vals := make(core.Values, 0, len(p.ResTargets))
+		for _, fn := range resFuncs {
+			vals = append(vals, fn(row))
 		}
 		row.SetValues(vals)
+		row.SetColNames(p.TargetColNames)
 		newRows = append(newRows, row)
 	}
 
 	newTable.SetRows(newRows)
-	newTable.SetColNames(p.TargetCols)
+	newTable.SetColNames(p.TargetColNames)
 	// TODO: implement SetCols if type validation is implemented
 	// newTable.SetCols(cols)
 

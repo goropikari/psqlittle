@@ -648,9 +648,12 @@ func TestEvalProjectionNode(t *testing.T) {
 		Name:      "name",
 	}
 
+	const someConst = 10
+
 	var tests = []struct {
 		name               string
 		targetCols         core.ColumnNames
+		resTargets         []trans.Expression
 		table              trans.RelationalAlgebraNode
 		tableName          string
 		tableColNames      core.ColumnNames
@@ -664,7 +667,12 @@ func TestEvalProjectionNode(t *testing.T) {
 			table: &trans.TableNode{
 				TableName: "hoge",
 			},
-			tableName:     "hoge",
+			tableName: "hoge",
+			resTargets: []trans.Expression{
+				trans.ColRefNode{cn2},
+				trans.ColRefNode{cn1},
+				trans.IntegerNode{Val: someConst},
+			},
 			tableColNames: core.ColumnNames{cn1, cn2},
 			rowRes: core.ValuesList{
 				{123, "foo"},
@@ -673,9 +681,9 @@ func TestEvalProjectionNode(t *testing.T) {
 			},
 			expectedRowNum: 3,
 			expectedValuesList: core.ValuesList{
-				{"foo", 123},
-				{"bar", 456},
-				{"baz", 789},
+				{"foo", 123, someConst},
+				{"bar", 456, someConst},
+				{"baz", 789, someConst},
 			},
 		},
 	}
@@ -707,8 +715,9 @@ func TestEvalProjectionNode(t *testing.T) {
 			db.EXPECT().GetTable(tt.tableName).Return(spyTable, nil).AnyTimes()
 
 			projectNode := trans.ProjectionNode{
-				TargetCols: tt.targetCols,
-				Table:      tt.table,
+				ResTargets:     tt.resTargets,
+				TargetColNames: tt.targetCols,
+				Table:          tt.table,
 			}
 
 			projectNode.Eval(db)
@@ -752,8 +761,9 @@ func (s *SpyTable) SetColNames(names core.ColumnNames) {
 }
 
 type SpyRow struct {
-	MockRow backend.Row
-	Values  core.Values
+	MockRow  backend.Row
+	Values   core.Values
+	ColNames core.ColumnNames
 }
 
 func (r *SpyRow) GetValueByColName(name core.ColumnName) core.Value {
@@ -766,4 +776,8 @@ func (r *SpyRow) GetValues() core.Values {
 
 func (r *SpyRow) SetValues(values core.Values) {
 	r.Values = values
+}
+
+func (r *SpyRow) SetColNames(names core.ColumnNames) {
+	r.ColNames = names
 }
