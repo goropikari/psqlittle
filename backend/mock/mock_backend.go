@@ -87,18 +87,18 @@ func (mr *MockTableMockRecorder) Copy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Copy", reflect.TypeOf((*MockTable)(nil).Copy))
 }
 
-// GetColExprs mocks base method.
-func (m *MockTable) GetColExprs() core.ColExprs {
+// GetColNames mocks base method.
+func (m *MockTable) GetColNames() core.ColumnNames {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetColExprs")
-	ret0, _ := ret[0].(core.ColExprs)
+	ret := m.ctrl.Call(m, "GetColNames")
+	ret0, _ := ret[0].(core.ColumnNames)
 	return ret0
 }
 
-// GetColExprs indicates an expected call of GetColExprs.
-func (mr *MockTableMockRecorder) GetColExprs() *gomock.Call {
+// GetColNames indicates an expected call of GetColNames.
+func (mr *MockTableMockRecorder) GetColNames() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColExprs", reflect.TypeOf((*MockTable)(nil).GetColExprs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColNames", reflect.TypeOf((*MockTable)(nil).GetColNames))
 }
 
 // GetRows mocks base method.
@@ -115,16 +115,16 @@ func (mr *MockTableMockRecorder) GetRows() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRows", reflect.TypeOf((*MockTable)(nil).GetRows))
 }
 
-// SetColExprs mocks base method.
-func (m *MockTable) SetColExprs(arg0 core.ColExprs) {
+// SetColNames mocks base method.
+func (m *MockTable) SetColNames(arg0 core.ColumnNames) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetColExprs", arg0)
+	m.ctrl.Call(m, "SetColNames", arg0)
 }
 
-// SetColExprs indicates an expected call of SetColExprs.
-func (mr *MockTableMockRecorder) SetColExprs(arg0 interface{}) *gomock.Call {
+// SetColNames indicates an expected call of SetColNames.
+func (mr *MockTableMockRecorder) SetColNames(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetColExprs", reflect.TypeOf((*MockTable)(nil).SetColExprs), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetColNames", reflect.TypeOf((*MockTable)(nil).SetColNames), arg0)
 }
 
 // SetRows mocks base method.
@@ -162,18 +162,18 @@ func (m *MockRow) EXPECT() *MockRowMockRecorder {
 	return m.recorder
 }
 
-// GetValueByColExpr mocks base method.
-func (m *MockRow) GetValueByColExpr(arg0 core.ColExpr) core.Value {
+// GetValueByColName mocks base method.
+func (m *MockRow) GetValueByColName(arg0 core.ColumnName) core.Value {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetValueByColExpr", arg0)
+	ret := m.ctrl.Call(m, "GetValueByColName", arg0)
 	ret0, _ := ret[0].(core.Value)
 	return ret0
 }
 
-// GetValueByColExpr indicates an expected call of GetValueByColExpr.
-func (mr *MockRowMockRecorder) GetValueByColExpr(arg0 interface{}) *gomock.Call {
+// GetValueByColName indicates an expected call of GetValueByColName.
+func (mr *MockRowMockRecorder) GetValueByColName(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValueByColExpr", reflect.TypeOf((*MockRow)(nil).GetValueByColExpr), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValueByColName", reflect.TypeOf((*MockRow)(nil).GetValueByColName), arg0)
 }
 
 // GetValues mocks base method.

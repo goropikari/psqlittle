@@ -29,7 +29,7 @@ func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
 
 // ProjectionNode is Node of projection operation
 type ProjectionNode struct {
-	TargetCols core.ColExprs
+	TargetCols core.ColumnNames
 	Table      RelationalAlgebraNode
 }
 
@@ -47,14 +47,14 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 	for _, row := range rows {
 		vals := make(core.Values, 0, len(p.TargetCols))
 		for _, colName := range p.TargetCols {
-			vals = append(vals, row.GetValueByColExpr(colName))
+			vals = append(vals, row.GetValueByColName(colName))
 		}
 		row.SetValues(vals)
 		newRows = append(newRows, row)
 	}
 
 	newTable.SetRows(newRows)
-	newTable.SetColExprs(p.TargetCols)
+	newTable.SetColNames(p.TargetCols)
 	// TODO: implement SetCols if type validation is implemented
 	// newTable.SetCols(cols)
 
@@ -63,7 +63,7 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 
 // WhereNode is Node of where clause
 type WhereNode struct {
-	Condition WhereExpr
+	Condition Expression
 	Table     RelationalAlgebraNode
 }
 

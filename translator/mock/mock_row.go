@@ -12,31 +12,31 @@ import (
 	core "github.com/goropikari/mysqlite2/core"
 )
 
-// MockWhereExpr is a mock of WhereExpr interface.
-type MockWhereExpr struct {
+// MockExpression is a mock of Expression interface.
+type MockExpression struct {
 	ctrl     *gomock.Controller
-	recorder *MockWhereExprMockRecorder
+	recorder *MockExpressionMockRecorder
 }
 
-// MockWhereExprMockRecorder is the mock recorder for MockWhereExpr.
-type MockWhereExprMockRecorder struct {
-	mock *MockWhereExpr
+// MockExpressionMockRecorder is the mock recorder for MockExpression.
+type MockExpressionMockRecorder struct {
+	mock *MockExpression
 }
 
-// NewMockWhereExpr creates a new mock instance.
-func NewMockWhereExpr(ctrl *gomock.Controller) *MockWhereExpr {
-	mock := &MockWhereExpr{ctrl: ctrl}
-	mock.recorder = &MockWhereExprMockRecorder{mock}
+// NewMockExpression creates a new mock instance.
+func NewMockExpression(ctrl *gomock.Controller) *MockExpression {
+	mock := &MockExpression{ctrl: ctrl}
+	mock.recorder = &MockExpressionMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockWhereExpr) EXPECT() *MockWhereExprMockRecorder {
+func (m *MockExpression) EXPECT() *MockExpressionMockRecorder {
 	return m.recorder
 }
 
 // Eval mocks base method.
-func (m *MockWhereExpr) Eval() func(backend.Row) core.Value {
+func (m *MockExpression) Eval() func(backend.Row) core.Value {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Eval")
 	ret0, _ := ret[0].(func(backend.Row) core.Value)
@@ -44,7 +44,7 @@ func (m *MockWhereExpr) Eval() func(backend.Row) core.Value {
 }
 
 // Eval indicates an expected call of Eval.
-func (mr *MockWhereExprMockRecorder) Eval() *gomock.Call {
+func (mr *MockExpressionMockRecorder) Eval() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eval", reflect.TypeOf((*MockWhereExpr)(nil).Eval))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eval", reflect.TypeOf((*MockExpression)(nil).Eval))
 }

@@ -46,19 +46,19 @@ func (pg *PGTranlator) TranslateSelect(pgtree *pg_query.SelectStmt) (RelationalA
 	// }, nil
 }
 
-func retrieveColNameTargetList(targetList []*pg_query.Node) core.ColExprs {
+func retrieveColNameTargetList(targetList []*pg_query.Node) core.ColumnNames {
 	if targetList == nil {
 		return nil
 	}
 
-	names := make(core.ColExprs, 0, len(targetList))
+	names := make(core.ColumnNames, 0, len(targetList))
 	for _, target := range targetList {
 		if target.GetResTarget().GetVal().GetColumnRef() != nil {
 			fields := target.GetResTarget().GetVal().GetColumnRef().GetFields()
 			if len(fields) == 2 { // column is specified by table name and column name
 				tableName := fields[0].GetString_().GetStr()
 				colName := fields[1].GetString_().GetStr()
-				names = append(names, core.ColExpr{TableName: tableName, Name: colName})
+				names = append(names, core.ColumnName{TableName: tableName, Name: colName})
 			} else {
 				// Not Implemented
 			}

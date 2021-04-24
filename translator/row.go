@@ -7,14 +7,14 @@ import (
 
 //go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock
 
-// WhereExpr is interface of boolean expression
-type WhereExpr interface {
+// Expression is interface of boolean expression
+type Expression interface {
 	Eval() func(row backend.Row) core.Value
 }
 
 // BoolConstNode is expression of boolean const
 type BoolConstNode struct {
-	Bool core.Value
+	Bool BoolType
 }
 
 // Eval evaluates BoolConstNode
@@ -38,23 +38,23 @@ func (i IntegerNode) Eval() func(backend.Row) core.Value {
 
 // ColRefNode is expression of integer
 type ColRefNode struct {
-	ColName core.ColExpr
+	ColName core.ColumnName
 }
 
 // Eval evaluates ColRefNode
-func (i ColRefNode) Eval() func(backend.Row) core.Value {
+func (n ColRefNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
-		val := row.GetValueByColExpr(i.ColName)
-		if val != nil {
-			return val
+		val := row.GetValueByColName(n.ColName)
+		if val == nil {
+			return Null
 		}
-		return Null
+		return val
 	}
 }
 
 // NotNode is expression of Not
 type NotNode struct {
-	Expr WhereExpr
+	Expr Expression
 }
 
 // Eval evaluates NotNode
@@ -66,8 +66,8 @@ func (nn NotNode) Eval() func(backend.Row) core.Value {
 
 // ORNode is expression of OR
 type ORNode struct {
-	Lexpr WhereExpr
-	Rexpr WhereExpr
+	Lexpr Expression
+	Rexpr Expression
 }
 
 // Eval evaluates ORNode
@@ -79,8 +79,8 @@ func (orn ORNode) Eval() func(backend.Row) core.Value {
 
 // ANDNode is expression of AND
 type ANDNode struct {
-	Lexpr WhereExpr
-	Rexpr WhereExpr
+	Lexpr Expression
+	Rexpr Expression
 }
 
 // Eval evaluates ANDNode
@@ -93,7 +93,7 @@ func (andn ANDNode) Eval() func(backend.Row) core.Value {
 // NullTestNode is expression of `IS (NOT) NULL`
 type NullTestNode struct {
 	TestType NullTestType
-	Expr     WhereExpr
+	Expr     Expression
 }
 
 // Eval evaluates NullTestNode
@@ -114,8 +114,8 @@ func (n NullTestNode) Eval() func(backend.Row) core.Value {
 // BinOpNode is expression of BinOpNode
 type BinOpNode struct {
 	Op    MathOp
-	Lexpr WhereExpr
-	Rexpr WhereExpr
+	Lexpr Expression
+	Rexpr Expression
 }
 
 // Eval evaluates BinOpNode
