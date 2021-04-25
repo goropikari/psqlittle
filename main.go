@@ -29,7 +29,7 @@ func main() {
 func prepareDB() backend.DB {
 	tableName := "hoge"
 	db := backend.NewDatabase()
-	cols := backend.Cols{
+	cols := core.Cols{
 		{
 			ColName: core.ColumnName{
 				TableName: tableName,

@@ -36,8 +36,8 @@ func (cn ColumnNames) Copy() ColumnNames {
 }
 
 // Equal checks the equality of ColumnName
-func (name ColumnName) Equal(other ColumnName) bool {
-	return name.TableName == other.TableName && name.Name == other.Name
+func (cn ColumnName) Equal(other ColumnName) bool {
+	return cn.TableName == other.TableName && cn.Name == other.Name
 }
 
 // Value is any type for column
@@ -48,3 +48,47 @@ type Values []Value
 
 // ValuesList is list of Values
 type ValuesList []Values
+
+// Col is type of column
+type Col struct {
+	ColName ColumnName
+	ColType ColType
+}
+
+// Cols is list of Col
+type Cols []Col
+
+// Equal check the equality of Col
+func (col Col) Equal(other Col) bool {
+	return col.ColName.Equal(other.ColName) && col.ColType == other.ColType
+}
+
+// Equal checks the equality of Cols
+func (cols Cols) Equal(others Cols) bool {
+	for k, col := range cols {
+		if !col.Equal(others[k]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// NotEqual checks the non-equality of Cols
+func (cols Cols) NotEqual(others Cols) bool {
+	return !cols.Equal(others)
+}
+
+// Copy copies Col.
+func (col Col) Copy() Col {
+	return Col{col.ColName, col.ColType}
+}
+
+// Copy copies Cols.
+func (cols Cols) Copy() Cols {
+	newCols := make(Cols, 0, len(cols))
+	for _, col := range cols {
+		newCols = append(newCols, col.Copy())
+	}
+	return newCols
+}

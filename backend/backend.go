@@ -47,7 +47,7 @@ func NewDatabase() *Database {
 }
 
 // CreateTable is method to create table
-func (db *Database) CreateTable(tableName string, cols Cols) error {
+func (db *Database) CreateTable(tableName string, cols core.Cols) error {
 	if _, ok := db.Tables[tableName]; ok {
 		return ErrTableAlreadyExists
 	}
@@ -79,50 +79,6 @@ func (db *Database) GetTable(tableName string) (Table, error) {
 
 	tb := db.Tables[tableName]
 	return tb, nil
-}
-
-// Col is type of column
-type Col struct {
-	ColName core.ColumnName
-	ColType core.ColType
-}
-
-// Cols is list of Col
-type Cols []Col
-
-// Equal check the equality of Col
-func (col Col) Equal(other Col) bool {
-	return col.ColName.Equal(other.ColName) && col.ColType == other.ColType
-}
-
-// Equal checks the equality of Cols
-func (cols Cols) Equal(others Cols) bool {
-	for k, col := range cols {
-		if !col.Equal(others[k]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// NotEqual checks the non-equality of Cols
-func (cols Cols) NotEqual(others Cols) bool {
-	return !cols.Equal(others)
-}
-
-// Copy copies Col.
-func (col Col) Copy() Col {
-	return Col{col.ColName, col.ColType}
-}
-
-// Copy copies Cols.
-func (cols Cols) Copy() Cols {
-	newCols := make(Cols, 0, len(cols))
-	for _, col := range cols {
-		newCols = append(newCols, col.Copy())
-	}
-	return newCols
 }
 
 // DBRow is struct of row of table
@@ -261,7 +217,7 @@ func (c ColNameIndexes) Copy() ColNameIndexes {
 // DBTable is struct for DBTable
 type DBTable struct {
 	ColNames       core.ColumnNames
-	Cols           Cols
+	Cols           core.Cols
 	ColNameIndexes ColNameIndexes
 	Rows           DBRows
 }
