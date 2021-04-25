@@ -40,6 +40,25 @@ func (cn ColumnName) Equal(other ColumnName) bool {
 	return cn.TableName == other.TableName && cn.Name == other.Name
 }
 
+// Equal checks the equality of ColumnNames
+func (cn ColumnNames) Equal(others ColumnNames) bool {
+	if len(cn) != len(others) {
+		return false
+	}
+
+	if len(cn) == len(others) && len(cn) == 0 {
+		return true
+	}
+
+	for k, name := range cn {
+		if !name.Equal(others[k]) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Value is any type for column
 type Value interface{}
 

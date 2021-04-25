@@ -3,6 +3,7 @@ package translator
 import (
 	"strconv"
 
+	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
 	pg_query "github.com/pganalyze/pg_query_go/v2"
 )
@@ -37,6 +38,9 @@ func (pg *PGTranlator) Translate() (RelationalAlgebraNode, error) {
 	}
 	if node := stmt.GetCreateStmt(); node != nil {
 		return pg.TranslateCreateTable(node)
+	}
+	if node := stmt.GetInsertStmt(); node != nil {
+		return pg.TranslateInsert(node)
 	}
 	return nil, nil
 }
@@ -124,6 +128,7 @@ func interpreteTargetList(targetList []*pg_query.Node) (core.ColumnNames, []Expr
 	return names, resExprs
 }
 
+// TranslateCreateTable translates sql parse tree into CreateTableNode
 func (pg *PGTranlator) TranslateCreateTable(stmt *pg_query.CreateStmt) (RelationalAlgebraNode, error) {
 	tableName := stmt.GetRelation().GetRelname()
 	colDefs := prepareColDefs(stmt.GetTableElts(), tableName)
@@ -131,6 +136,39 @@ func (pg *PGTranlator) TranslateCreateTable(stmt *pg_query.CreateStmt) (Relation
 	return &CreateTableNode{
 		TableName:  tableName,
 		ColumnDefs: colDefs,
+	}, nil
+}
+
+// TranslateInsert translates sql parse tree into InsertNode
+func (pg *PGTranlator) TranslateInsert(stmt *pg_query.InsertStmt) (RelationalAlgebraNode, error) {
+	tableName := stmt.GetRelation().GetRelname()
+	rawValsLists := stmt.GetSelectStmt().GetSelectStmt().GetValuesLists()
+
+	valsLists := make(core.ValuesList, 0, len(rawValsLists))
+	for _, rawVals := range rawValsLists {
+		items := rawVals.GetList().GetItems()
+		vals := make(core.Values, 0, len(items))
+		for _, item := range items {
+			var r backend.Row
+			val := constructExprNode(item).Eval()(r)
+			vals = append(vals, val)
+		}
+		valsLists = append(valsLists, vals)
+	}
+
+	cols := stmt.GetCols()
+	colNames := make(core.ColumnNames, 0, len(cols))
+	for _, col := range cols {
+		colNames = append(colNames, core.ColumnName{
+			TableName: tableName,
+			Name:      col.GetResTarget().GetName(),
+		})
+	}
+
+	return &InsertNode{
+		TableName:   tableName,
+		ColumnNames: colNames,
+		ValuesList:  valsLists,
 	}, nil
 }
 

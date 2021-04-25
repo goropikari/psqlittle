@@ -129,6 +129,20 @@ func (mr *MockTableMockRecorder) GetRows() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRows", reflect.TypeOf((*MockTable)(nil).GetRows))
 }
 
+// InsertValues mocks base method.
+func (m *MockTable) InsertValues(arg0 core.ColumnNames, arg1 core.ValuesList) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertValues", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertValues indicates an expected call of InsertValues.
+func (mr *MockTableMockRecorder) InsertValues(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertValues", reflect.TypeOf((*MockTable)(nil).InsertValues), arg0, arg1)
+}
+
 // SetColNames mocks base method.
 func (m *MockTable) SetColNames(arg0 core.ColumnNames) {
 	m.ctrl.T.Helper()

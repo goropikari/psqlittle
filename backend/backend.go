@@ -4,7 +4,6 @@ package backend
 
 import (
 	"errors"
-	"reflect"
 
 	"github.com/goropikari/mysqlite2/core"
 )
@@ -22,6 +21,7 @@ type Table interface {
 	SetColNames(core.ColumnNames)
 	GetRows() []Row
 	SetRows([]Row)
+	InsertValues(core.ColumnNames, core.ValuesList) error
 	// GetCols() []Col
 	// SetCols([]Col)
 }
@@ -58,16 +58,10 @@ func (db *Database) CreateTable(tableName string, cols core.Cols) error {
 		colNames = append(colNames, col.ColName)
 	}
 
-	ColNameIndexes := make(ColNameIndexes)
-	for k, col := range cols {
-		ColNameIndexes[col.ColName] = k
-	}
-
 	db.Tables[tableName] = &DBTable{
-		ColNames:       colNames,
-		Cols:           cols,
-		Rows:           make(DBRows, 0),
-		ColNameIndexes: ColNameIndexes,
+		ColNames: colNames,
+		Cols:     cols,
+		Rows:     make(DBRows, 0),
 	}
 	return nil
 }
@@ -116,25 +110,6 @@ func (r *DBRow) SetColNames(names core.ColumnNames) {
 	r.ColNames = names
 }
 
-// Equal checks the equality of DBRow
-func (r *DBRow) Equal(other *DBRow) bool {
-	if other.Values == nil {
-		return false
-	}
-	if len(r.Values) != len(other.Values) {
-		return false
-	}
-
-	ok := true
-	for i := 0; i < len(r.Values); i++ {
-		if r.Values[i] != other.Values[i] {
-			ok = false
-		}
-	}
-
-	return ok
-}
-
 // Copy copies DBRow
 func (r *DBRow) Copy() *DBRow {
 	vals := make(core.Values, len(r.Values))
@@ -145,33 +120,6 @@ func (r *DBRow) Copy() *DBRow {
 		ColNames: names,
 		Values:   vals,
 	}
-}
-
-// Equal checks the equality of DBRows
-func (r DBRows) Equal(other DBRows) bool {
-	if len(r) == len(other) && len(r) == 0 {
-		return true
-	}
-	if other == nil {
-		return false
-	}
-	if len(r) != len(other) {
-		return false
-	}
-
-	ok := true
-	for i := 0; i < len(r); i++ {
-		if !r[i].Equal(other[i]) {
-			ok = false
-		}
-	}
-
-	return ok
-}
-
-// NotEqual checks the non-equality of DBRows
-func (r DBRows) NotEqual(other DBRows) bool {
-	return !r.Equal(other)
 }
 
 // Copy copies DBRows
@@ -195,16 +143,6 @@ func (r *DBRow) getByID(i ColumnID) core.Value {
 // ColNameIndexes is map ColName to corresponding column index
 type ColNameIndexes map[core.ColumnName]int
 
-// Equal checks the equality of ColNameIndexes
-func (c ColNameIndexes) Equal(other ColNameIndexes) bool {
-	return reflect.DeepEqual(c, other)
-}
-
-// NotEqual checks the non-equality of ColNameIndexes
-func (c ColNameIndexes) NotEqual(other ColNameIndexes) bool {
-	return !c.Equal(other)
-}
-
 // Copy copies ColNameIndexes
 func (c ColNameIndexes) Copy() ColNameIndexes {
 	indexes := make(ColNameIndexes)
@@ -217,19 +155,17 @@ func (c ColNameIndexes) Copy() ColNameIndexes {
 
 // DBTable is struct for DBTable
 type DBTable struct {
-	ColNames       core.ColumnNames
-	Cols           core.Cols
-	ColNameIndexes ColNameIndexes
-	Rows           DBRows
+	ColNames core.ColumnNames
+	Cols     core.Cols
+	Rows     DBRows
 }
 
 // Copy copies DBTable
 func (t *DBTable) Copy() Table {
 	tb := &DBTable{
-		ColNames:       t.ColNames.Copy(),
-		Cols:           t.Cols.Copy(),
-		ColNameIndexes: t.ColNameIndexes.Copy(),
-		Rows:           t.Rows.Copy(),
+		ColNames: t.ColNames.Copy(),
+		Cols:     t.Cols.Copy(),
+		Rows:     t.Rows.Copy(),
 	}
 	return tb
 }
@@ -265,14 +201,49 @@ func (t *DBTable) SetRows(rows []Row) {
 	t.Rows = dbRows
 }
 
-// Equal checks the equality of DBTable
-func (t DBTable) Equal(other DBTable) bool {
-	return t.Cols.Equal(other.Cols) && t.Rows.Equal(other.Rows) && t.ColNameIndexes.Equal(other.ColNameIndexes)
+// InsertValues inserts values into the table
+func (t *DBTable) InsertValues(names core.ColumnNames, valsList core.ValuesList) error {
+	if len(names) == 0 {
+		names = t.GetColNames()
+	}
+	colNames := t.GetColNames()
+
+	err := t.validateInsert(names, valsList)
+	if err != nil {
+		return err
+	}
+
+	numCols := len(colNames)
+	indexes := make([]int, 0)
+	for _, name := range names {
+		for k, v := range colNames {
+			if name == v {
+				indexes = append(indexes, k)
+			}
+		}
+	}
+
+	for _, vals := range valsList {
+		row := &DBRow{ColNames: colNames, Values: make(core.Values, numCols)}
+		for vi, ci := range indexes {
+			row.Values[ci] = vals[vi]
+		}
+		t.Rows = append(t.Rows, row)
+	}
+
+	return nil
 }
 
-// NotEqual checks the non-equality of DBTable
-func (t DBTable) NotEqual(other DBTable) bool {
-	return !t.Equal(other)
+func (t *DBTable) validateInsert(names core.ColumnNames, valuesList core.ValuesList) error {
+	for _, vals := range valuesList {
+		if len(names) != len(vals) {
+			return errors.New("invalid insert elements")
+		}
+	}
+
+	// TODO: 型で validation かける
+
+	return nil
 }
 
 // Project is method to select columns of table.
@@ -305,59 +276,16 @@ func (t *DBTable) Rename(tableName string) {
 
 func (t *DBTable) toIndex(names core.ColumnNames) ([]ColumnID, error) {
 	idxs := make([]ColumnID, 0, len(names))
+	rawNames := t.GetColNames()
 	for _, name := range names {
-		if val, ok := t.ColNameIndexes[name]; ok {
-			idxs = append(idxs, ColumnID(val))
-		} else {
-			return nil, ErrIndexNotFound
+		for k, rawName := range rawNames {
+			if name.Equal(rawName) {
+				idxs = append(idxs, ColumnID(k))
+			} else {
+				return nil, ErrIndexNotFound
+			}
 		}
 	}
 
 	return idxs, nil
-}
-
-// Insert is method to insert record into table.
-func (t *DBTable) Insert(targetColNames core.ColumnNames, inputValsList core.ValuesList) error {
-	if targetColNames == nil {
-		targetColNames = t.ColNames
-	}
-
-	if err := t.validateInsert(targetColNames, inputValsList); err != nil {
-		return err
-	}
-
-	numCols := len(t.Cols)
-	idxs, err := t.toIndex(targetColNames)
-	if err != nil {
-		return err
-	}
-
-	rows := make([]*DBRow, 0, len(inputValsList))
-	for _, vals := range inputValsList {
-		tvalues := make(core.Values, numCols)
-		for vi := range idxs {
-			tvalues[vi] = vals[vi]
-		}
-		rows = append(rows, &DBRow{
-			ColNames: t.ColNames,
-			Values:   tvalues,
-		})
-	}
-
-	t.Rows = rows
-
-	return nil
-}
-
-func (t *DBTable) validateInsert(names core.ColumnNames, valuesList core.ValuesList) error {
-	// TODO: valuesList の各要素の長さが全部同じかチェックする
-	for _, vals := range valuesList {
-		if len(names) != len(vals) {
-			return errors.New("invalid insert elements")
-		}
-	}
-
-	// TODO: 型で validation かける
-
-	return nil
 }

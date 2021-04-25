@@ -126,9 +126,7 @@ func TestORNode(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.node.Eval()(row)
-			if actual != tt.expected {
-				t.Errorf("expected %v, actual %v", tt.expected, actual)
-			}
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -275,9 +273,7 @@ func TestANDNode(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.node.Eval()(row)
-			if actual != tt.expected {
-				t.Errorf("expected %v, actual %v", tt.expected, actual)
-			}
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -380,9 +376,7 @@ func TestNullTestNode(t *testing.T) {
 			row.EXPECT().GetValueByColName(gomock.Any()).Return(tt.rowRes).AnyTimes()
 
 			actual := tt.node.Eval()(row)
-			if actual != tt.expected {
-				t.Errorf("expected %v, actual %v", tt.expected, actual)
-			}
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -522,9 +516,7 @@ func TestBinOpNode(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.node.Eval()(row)
-			if actual != tt.expected {
-				t.Errorf("expected %v, actual %v", tt.expected, actual)
-			}
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -559,9 +551,7 @@ func TestEvalColRefNode(t *testing.T) {
 			row.EXPECT().GetValueByColName(tt.givenName).Return(tt.expected).AnyTimes()
 
 			actual := tt.node.Eval()(row)
-			if actual != tt.expected {
-				t.Errorf("expected %v, actual %v", tt.expected, actual)
-			}
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -630,9 +620,7 @@ func TestEvalWhereNode(t *testing.T) {
 			}
 
 			whereNode.Eval(db)
-			if count != tt.expectedRowNum {
-				t.Errorf("expected %v, actual %v", tt.expectedRowNum, count)
-			}
+			assert.Equal(t, tt.expectedRowNum, count)
 		})
 	}
 }
@@ -758,6 +746,10 @@ func (s *SpyTable) GetColNames() core.ColumnNames {
 }
 
 func (s *SpyTable) SetColNames(names core.ColumnNames) {
+}
+
+func (s *SpyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error {
+	return nil
 }
 
 type SpyRow struct {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/goropikari/mysqlite2/backend"
-	"github.com/goropikari/mysqlite2/core"
 	trans "github.com/goropikari/mysqlite2/translator"
 )
 
@@ -27,52 +26,24 @@ func main() {
 }
 
 func prepareDB() backend.DB {
-	tableName := "hoge"
 	db := backend.NewDatabase()
-	cols := core.Cols{
-		{
-			ColName: core.ColumnName{
-				TableName: tableName,
-				Name:      "id",
-			},
-			ColType: core.Integer,
-		},
-		{
-			ColName: core.ColumnName{
-				TableName: tableName,
-				Name:      "name",
-			},
-			ColType: core.VarChar,
-		},
-	}
 
-	colNames := make(core.ColumnNames, 0, len(cols))
-	for _, col := range cols {
-		colNames = append(colNames, col.ColName)
-	}
-
-	vals := core.ValuesList{
-		core.Values{1, "Hello"},
-		core.Values{1, "Hello"},
-		core.Values{1, "Hello"},
-		core.Values{nil, "World"},
-	}
-
-	// db.CreateTable("hoge", cols)
 	query := "create table hoge (id int, name varchar(255))"
 	raNode, _ := trans.NewPGTranslator(query).Translate()
-	_, err := raNode.Eval(db)
+	raNode.Eval(db)
 	if _, err := raNode.Eval(db); err != nil {
 		fmt.Println("error:", err)
 	}
 
-	table, _ := db.GetTable("hoge")
-	err = table.(*backend.DBTable).Insert(colNames, vals)
-	if err != nil {
-		fmt.Println(err)
-	}
-	table, _ = db.GetTable("hoge")
-	fmt.Println("after insert:", table.(*backend.DBTable).Rows[0])
+	query = "insert into hoge (name, id) values ('taro', 9876)"
+	raNode, _ = trans.NewPGTranslator(query).Translate()
+	raNode.Eval(db)
+	query = "insert into hoge (name, id) values ('hanako', 12343)"
+	raNode, _ = trans.NewPGTranslator(query).Translate()
+	raNode.Eval(db)
+	query = "insert into hoge (name, id) values ('mike', 7893)"
+	raNode, _ = trans.NewPGTranslator(query).Translate()
+	raNode.Eval(db)
 
 	return db
 }

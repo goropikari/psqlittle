@@ -26,10 +26,6 @@ func TestTableCopy(t *testing.T) {
 						ColType: core.VarChar,
 					},
 				},
-				ColNameIndexes: ColNameIndexes{
-					core.ColumnName{TableName: "hoge", Name: "id"}:   0,
-					core.ColumnName{TableName: "hoge", Name: "name"}: 1,
-				},
 				Rows: DBRows{
 					&DBRow{
 						Values: core.Values{1, "Hello"},
@@ -47,12 +43,9 @@ func TestTableCopy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := tt.given.Copy().(*DBTable) // convert Table to *DBTable
 			actual.Cols[0].ColName.TableName = "piyo"
-			actual.ColNameIndexes[core.ColumnName{TableName: "hoge", Name: "id"}] = 1
 			actual.Rows[0].Values[0] = "piyo"
 
-			if !actual.NotEqual(tt.given) {
-				t.Errorf("expected %v, actual %v", tt.given, actual)
-			}
+			assert.NotEqual(t, tt.given, actual, "these two tables should be different")
 		})
 	}
 }
@@ -66,7 +59,7 @@ func TestCreate(t *testing.T) {
 		givenDB        *Database
 		givenTableName string
 		givenCols      core.Cols
-		wantedTable    DBTable
+		wantedTable    *DBTable
 	}{
 		{
 			name:           "test create table",
@@ -82,7 +75,11 @@ func TestCreate(t *testing.T) {
 					ColType: core.VarChar,
 				},
 			},
-			wantedTable: DBTable{
+			wantedTable: &DBTable{
+				ColNames: core.ColumnNames{
+					{TableName: "hoge", Name: "id"},
+					{TableName: "hoge", Name: "name"},
+				},
 				Cols: core.Cols{
 					{
 						ColName: core.ColumnName{TableName: "hoge", Name: "id"},
@@ -93,10 +90,7 @@ func TestCreate(t *testing.T) {
 						ColType: core.VarChar,
 					},
 				},
-				ColNameIndexes: ColNameIndexes{
-					core.ColumnName{TableName: "hoge", Name: "id"}:   0,
-					core.ColumnName{TableName: "hoge", Name: "name"}: 1,
-				},
+				Rows: make(DBRows, 0),
 			},
 		},
 	}
@@ -108,16 +102,14 @@ func TestCreate(t *testing.T) {
 
 			actualTable := db.Tables[tt.givenTableName]
 
-			if !actualTable.Equal(tt.wantedTable) {
-				t.Errorf("expected %v, actual %v", tt.wantedTable, actualTable)
-			}
+			assert.Equal(t, tt.wantedTable, actualTable)
 		})
 	}
 }
 
 func TestInsert(t *testing.T) {
 
-	table := DBTable{
+	table := &DBTable{
 		Cols: core.Cols{
 			{
 				ColName: core.ColumnName{TableName: "hoge", Name: "id"},
@@ -128,24 +120,24 @@ func TestInsert(t *testing.T) {
 				ColType: core.VarChar,
 			},
 		},
-		ColNameIndexes: ColNameIndexes{
-			core.ColumnName{TableName: "hoge", Name: "id"}:   0,
-			core.ColumnName{TableName: "hoge", Name: "name"}: 1,
+		ColNames: core.ColumnNames{
+			{TableName: "hoge", Name: "id"},
+			{TableName: "hoge", Name: "name"},
 		},
 		Rows: DBRows{},
 	}
 
 	var tests = []struct {
 		name          string
-		expected      DBTable
-		given         DBTable
+		expected      *DBTable
+		given         *DBTable
 		givenColNames core.ColumnNames
 		givenValsList core.ValuesList
 	}{
 		{
 			name:  "test insert",
 			given: table,
-			expected: DBTable{
+			expected: &DBTable{
 				Cols: core.Cols{
 					{
 						ColName: core.ColumnName{TableName: "hoge", Name: "id"},
@@ -156,9 +148,9 @@ func TestInsert(t *testing.T) {
 						ColType: core.VarChar,
 					},
 				},
-				ColNameIndexes: ColNameIndexes{
-					core.ColumnName{TableName: "hoge", Name: "id"}:   0,
-					core.ColumnName{TableName: "hoge", Name: "name"}: 1,
+				ColNames: core.ColumnNames{
+					{TableName: "hoge", Name: "id"},
+					{TableName: "hoge", Name: "name"},
 				},
 				Rows: DBRows{
 					{
@@ -169,6 +161,10 @@ func TestInsert(t *testing.T) {
 						Values: core.Values{1, "taro"},
 					},
 					{
+						ColNames: core.ColumnNames{
+							{TableName: "hoge", Name: "id"},
+							{TableName: "hoge", Name: "name"},
+						},
 						Values: core.Values{2, "hanako"},
 					},
 				},
@@ -193,11 +189,9 @@ func TestInsert(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			tt.given.Insert(tt.givenColNames, tt.givenValsList)
+			tt.given.InsertValues(tt.givenColNames, tt.givenValsList)
 
-			if !tt.given.Equal(tt.expected) {
-				t.Errorf("expected %v, actual %v", tt.expected, tt.given)
-			}
+			assert.Equal(t, tt.expected, tt.given)
 		})
 	}
 }
@@ -222,10 +216,6 @@ func TestProject(t *testing.T) {
 						ColName: core.ColumnName{TableName: "hoge", Name: "name"},
 						ColType: core.VarChar,
 					},
-				},
-				ColNameIndexes: ColNameIndexes{
-					core.ColumnName{TableName: "hoge", Name: "id"}:   0,
-					core.ColumnName{TableName: "hoge", Name: "name"}: 1,
 				},
 				Rows: DBRows{
 					{
@@ -256,9 +246,8 @@ func TestProject(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actual, err := tt.givenTable.Project(tt.givenColNames)
-			if actual.Equal(tt.expected) {
-				t.Errorf("given(%v): expected %v, actual %v", tt.givenTable, tt.expected, actual)
-			}
+
+			assert.NotEqual(t, tt.expected, actual)
 			assert.NoError(t, err)
 		})
 	}

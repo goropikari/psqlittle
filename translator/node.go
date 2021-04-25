@@ -147,6 +147,8 @@ type EmptyTableRow struct {
 	Values   core.Values
 }
 
+func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
+
 func (r *EmptyTableRow) GetValueByColName(core.ColumnName) core.Value {
 	return nil
 }
@@ -195,14 +197,34 @@ func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
 	return newTable, nil
 }
 
+// CreateTableNode is a node of create statements
 type CreateTableNode struct {
 	TableName  string
 	ColumnDefs core.Cols
 }
 
+// Eval evaluates CreateTableNode
 func (c *CreateTableNode) Eval(db backend.DB) (backend.Table, error) {
 	if err := db.CreateTable(c.TableName, c.ColumnDefs); err != nil {
 		return nil, err
 	}
+	return nil, nil
+}
+
+// InsertNode is a node of create statements
+type InsertNode struct {
+	TableName   string
+	ColumnNames core.ColumnNames
+	ValuesList  core.ValuesList
+}
+
+// Eval evaluates CreateTableNode
+func (c *InsertNode) Eval(db backend.DB) (backend.Table, error) {
+	tb, err := db.GetTable(c.TableName)
+	if err != nil {
+		return nil, err
+	}
+	tb.InsertValues(c.ColumnNames, c.ValuesList)
+
 	return nil, nil
 }
