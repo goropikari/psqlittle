@@ -29,23 +29,27 @@ func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
 
 // ProjectionNode is Node of projection operation
 type ProjectionNode struct {
-	ResTargets     []Expression
+	ResTargets     []ExpressionNode
 	TargetColNames core.ColumnNames
 	Table          RelationalAlgebraNode
 }
 
 // Eval evaluates ProjectionNode
 func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
+	if p.Table == nil {
+		return nil, nil
+	}
+
 	tb, err := p.Table.Eval(db)
 	if err != nil {
 		return nil, err
 	}
+	if tb == nil {
+		return p.evalEmptyTable()
+	}
 	newTable := tb.Copy()
 
-	resFuncs := make([]func(backend.Row) core.Value, 0, len(p.ResTargets))
-	for _, target := range p.ResTargets {
-		resFuncs = append(resFuncs, target.Eval())
-	}
+	resFuncs := p.constructResFunc()
 
 	rows := newTable.GetRows()
 	newRows := make([]backend.Row, 0, len(rows))
@@ -67,17 +71,92 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 	return newTable, nil
 }
 
+func (p *ProjectionNode) constructResFunc() []func(row backend.Row) core.Value {
+	resFuncs := make([]func(backend.Row) core.Value, 0, len(p.ResTargets))
+	for _, target := range p.ResTargets {
+		resFuncs = append(resFuncs, target.Eval())
+	}
+
+	return resFuncs
+}
+
+func (p *ProjectionNode) evalEmptyTable() (backend.Table, error) {
+	resFuncs := p.constructResFunc()
+	row := &EmptyTableRow{
+		ColNames: p.TargetColNames,
+		Values:   make(core.Values, 0),
+	}
+
+	for _, fn := range resFuncs {
+		row.Values = append(row.Values, fn(row))
+	}
+
+	return &EmptyTable{
+		ColNames: p.TargetColNames,
+		Rows:     []*EmptyTableRow{row},
+	}, nil
+}
+
+type EmptyTable struct {
+	ColNames core.ColumnNames
+	Rows     []*EmptyTableRow
+}
+
+func (t *EmptyTable) Copy() backend.Table {
+	return t
+}
+
+func (t *EmptyTable) GetColNames() core.ColumnNames {
+	return t.ColNames
+}
+
+func (t *EmptyTable) SetColNames(names core.ColumnNames) {}
+
+func (t *EmptyTable) GetRows() []backend.Row {
+	rows := make([]backend.Row, 0, len(t.Rows))
+	for _, row := range t.Rows {
+		rows = append(rows, row)
+	}
+	return rows
+}
+
+func (t *EmptyTable) SetRows(rows []backend.Row) {}
+
+type EmptyTableRow struct {
+	ColNames core.ColumnNames
+	Values   core.Values
+}
+
+func (r *EmptyTableRow) GetValueByColName(core.ColumnName) core.Value {
+	return nil
+}
+
+func (r *EmptyTableRow) GetValues() core.Values {
+	return r.Values
+}
+
+func (r *EmptyTableRow) SetValues(vals core.Values)         {}
+func (r *EmptyTableRow) SetColNames(names core.ColumnNames) {}
+
 // WhereNode is Node of where clause
 type WhereNode struct {
-	Condition Expression
+	Condition ExpressionNode
 	Table     RelationalAlgebraNode
 }
 
 // Eval evaluate WhereNode
 func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
+	if wn.Table == nil {
+		return backend.Table(nil), nil
+	}
+
 	tb, err := wn.Table.Eval(db)
 	if err != nil {
 		return nil, err
+	}
+
+	if wn.Condition == nil {
+		return tb, nil
 	}
 
 	newTable := tb.Copy()

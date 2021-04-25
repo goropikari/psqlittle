@@ -268,12 +268,13 @@ type DBTable struct {
 
 // Copy copies DBTable
 func (t *DBTable) Copy() Table {
-	return &DBTable{
+	tb := &DBTable{
 		ColNames:       t.ColNames.Copy(),
 		Cols:           t.Cols.Copy(),
 		ColNameIndexes: t.ColNameIndexes.Copy(),
 		Rows:           t.Rows.Copy(),
 	}
+	return tb
 }
 
 // GetColNames return column names of table

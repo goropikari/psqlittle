@@ -16,7 +16,7 @@ func TestORNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expression
+		node     trans.ExpressionNode
 		expected trans.BoolType
 	}{
 		{
@@ -137,7 +137,7 @@ func TestANDNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expression
+		node     trans.ExpressionNode
 		expected trans.BoolType
 	}{
 		{
@@ -286,7 +286,7 @@ func TestNullTestNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expression
+		node     trans.ExpressionNode
 		rowRes   core.Value
 		expected interface{}
 	}{
@@ -391,7 +391,7 @@ func TestBinOpNode(t *testing.T) {
 
 	var tests = []struct {
 		name     string
-		node     trans.Expression
+		node     trans.ExpressionNode
 		expected interface{}
 	}{
 		{
@@ -535,7 +535,7 @@ func TestEvalColRefNode(t *testing.T) {
 
 	var tests = []struct {
 		name      string
-		node      trans.Expression
+		node      trans.ExpressionNode
 		givenName core.ColumnName
 		expected  interface{}
 	}{
@@ -575,7 +575,7 @@ func TestEvalWhereNode(t *testing.T) {
 
 	var tests = []struct {
 		name           string
-		condnode       trans.Expression
+		condnode       trans.ExpressionNode
 		tableName      string
 		givenName      core.ColumnName
 		rowRes         []interface{}
@@ -653,7 +653,7 @@ func TestEvalProjectionNode(t *testing.T) {
 	var tests = []struct {
 		name               string
 		targetCols         core.ColumnNames
-		resTargets         []trans.Expression
+		resTargets         []trans.ExpressionNode
 		table              trans.RelationalAlgebraNode
 		tableName          string
 		tableColNames      core.ColumnNames
@@ -668,7 +668,7 @@ func TestEvalProjectionNode(t *testing.T) {
 				TableName: "hoge",
 			},
 			tableName: "hoge",
-			resTargets: []trans.Expression{
+			resTargets: []trans.ExpressionNode{
 				trans.ColRefNode{cn2},
 				trans.ColRefNode{cn1},
 				trans.IntegerNode{Val: someConst},

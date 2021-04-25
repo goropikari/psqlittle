@@ -11,7 +11,21 @@ import (
 )
 
 func main() {
+	db := prepareDB()
 
+	// evaluate query
+	query := "select hoge.name, hoge.id, 1000, 1.5, 'taro' from hoge"
+	// query := "select true=true, 1, 1000"
+	raNode, _ := trans.NewPGTranslator(query).Translate()
+	fmt.Println("raNode: ", raNode)
+	tb, _ := raNode.Eval(db)
+	rows := tb.GetRows()
+	for k, row := range rows {
+		fmt.Printf("row %v: %v\n", k, row)
+	}
+}
+
+func prepareDB() backend.DB {
 	tableName := "hoge"
 	db := backend.NewDatabase()
 	cols := backend.Cols{
@@ -52,52 +66,5 @@ func main() {
 	table, _ = db.GetTable("hoge")
 	fmt.Println("after insert:", table.(*backend.DBTable).Rows[0])
 
-	whereCond := trans.BinOpNode{
-		Op: trans.EqualOp,
-		Lexpr: trans.ColRefNode{
-			ColName: core.ColumnName{
-				TableName: tableName,
-				Name:      "id",
-			},
-		},
-		Rexpr: trans.IntegerNode{
-			Val: 1,
-		},
-		// Rexpr: trans.BoolConstNode{
-		// 	Bool: trans.Null,
-		// },
-	}
-
-	// whereCond := trans.NullTestNode{
-	// 	TestType: trans.EqualNull,
-	// 	Expr: trans.ColRefNode{
-	// 		core.ColumnName{
-	// 			TableName: "hoge",
-	// 			Name:      "id",
-	// 		},
-	// 	},
-	// }
-
-	whereNode := trans.WhereNode{
-		Condition: whereCond,
-		Table: &trans.TableNode{
-			TableName: tableName,
-		},
-	}
-
-	projectNode := &trans.ProjectionNode{
-		TargetCols: core.ColumnNames{
-			{TableName: "hoge", Name: "name"},
-			{TableName: "hoge", Name: "id"},
-		},
-		Table: &whereNode,
-	}
-
-	// tb, _ := whereNode.Eval(db)
-	tb, _ := projectNode.Eval(db)
-	fmt.Println(tb)
-	rows := tb.GetRows()
-	for k, row := range rows {
-		fmt.Printf("row %v: %v\n", k, row)
-	}
+	return db
 }

@@ -12,31 +12,31 @@ import (
 	core "github.com/goropikari/mysqlite2/core"
 )
 
-// MockExpression is a mock of Expression interface.
-type MockExpression struct {
+// MockExpressionNode is a mock of ExpressionNode interface.
+type MockExpressionNode struct {
 	ctrl     *gomock.Controller
-	recorder *MockExpressionMockRecorder
+	recorder *MockExpressionNodeMockRecorder
 }
 
-// MockExpressionMockRecorder is the mock recorder for MockExpression.
-type MockExpressionMockRecorder struct {
-	mock *MockExpression
+// MockExpressionNodeMockRecorder is the mock recorder for MockExpressionNode.
+type MockExpressionNodeMockRecorder struct {
+	mock *MockExpressionNode
 }
 
-// NewMockExpression creates a new mock instance.
-func NewMockExpression(ctrl *gomock.Controller) *MockExpression {
-	mock := &MockExpression{ctrl: ctrl}
-	mock.recorder = &MockExpressionMockRecorder{mock}
+// NewMockExpressionNode creates a new mock instance.
+func NewMockExpressionNode(ctrl *gomock.Controller) *MockExpressionNode {
+	mock := &MockExpressionNode{ctrl: ctrl}
+	mock.recorder = &MockExpressionNodeMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockExpression) EXPECT() *MockExpressionMockRecorder {
+func (m *MockExpressionNode) EXPECT() *MockExpressionNodeMockRecorder {
 	return m.recorder
 }
 
 // Eval mocks base method.
-func (m *MockExpression) Eval() func(backend.Row) core.Value {
+func (m *MockExpressionNode) Eval() func(backend.Row) core.Value {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Eval")
 	ret0, _ := ret[0].(func(backend.Row) core.Value)
@@ -44,7 +44,7 @@ func (m *MockExpression) Eval() func(backend.Row) core.Value {
 }
 
 // Eval indicates an expected call of Eval.
-func (mr *MockExpressionMockRecorder) Eval() *gomock.Call {
+func (mr *MockExpressionNodeMockRecorder) Eval() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eval", reflect.TypeOf((*MockExpression)(nil).Eval))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Eval", reflect.TypeOf((*MockExpressionNode)(nil).Eval))
 }

@@ -7,8 +7,8 @@ import (
 
 //go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock
 
-// Expression is interface of boolean expression
-type Expression interface {
+// ExpressionNode is interface of boolean expression
+type ExpressionNode interface {
 	Eval() func(row backend.Row) core.Value
 }
 
@@ -36,6 +36,30 @@ func (i IntegerNode) Eval() func(backend.Row) core.Value {
 	}
 }
 
+// FloatNode is expression of integer
+type FloatNode struct {
+	Val float64
+}
+
+// Eval evaluates FloatNode
+func (f FloatNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
+		return f.Val
+	}
+}
+
+// StringNode is expression of integer
+type StringNode struct {
+	Val string
+}
+
+// Eval evaluates StringNode
+func (s StringNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
+		return s.Val
+	}
+}
+
 // ColRefNode is expression of integer
 type ColRefNode struct {
 	ColName core.ColumnName
@@ -54,7 +78,7 @@ func (n ColRefNode) Eval() func(backend.Row) core.Value {
 
 // NotNode is expression of Not
 type NotNode struct {
-	Expr Expression
+	Expr ExpressionNode
 }
 
 // Eval evaluates NotNode
@@ -66,8 +90,8 @@ func (nn NotNode) Eval() func(backend.Row) core.Value {
 
 // ORNode is expression of OR
 type ORNode struct {
-	Lexpr Expression
-	Rexpr Expression
+	Lexpr ExpressionNode
+	Rexpr ExpressionNode
 }
 
 // Eval evaluates ORNode
@@ -79,8 +103,8 @@ func (orn ORNode) Eval() func(backend.Row) core.Value {
 
 // ANDNode is expression of AND
 type ANDNode struct {
-	Lexpr Expression
-	Rexpr Expression
+	Lexpr ExpressionNode
+	Rexpr ExpressionNode
 }
 
 // Eval evaluates ANDNode
@@ -93,7 +117,7 @@ func (andn ANDNode) Eval() func(backend.Row) core.Value {
 // NullTestNode is expression of `IS (NOT) NULL`
 type NullTestNode struct {
 	TestType NullTestType
-	Expr     Expression
+	Expr     ExpressionNode
 }
 
 // Eval evaluates NullTestNode
@@ -114,8 +138,8 @@ func (n NullTestNode) Eval() func(backend.Row) core.Value {
 // BinOpNode is expression of BinOpNode
 type BinOpNode struct {
 	Op    MathOp
-	Lexpr Expression
-	Rexpr Expression
+	Lexpr ExpressionNode
+	Rexpr ExpressionNode
 }
 
 // Eval evaluates BinOpNode
