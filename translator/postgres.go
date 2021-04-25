@@ -35,6 +35,9 @@ func (pg *PGTranlator) Translate() (RelationalAlgebraNode, error) {
 	if node := stmt.GetSelectStmt(); node != nil {
 		return pg.TranslateSelect(node)
 	}
+	if node := stmt.GetCreateStmt(); node != nil {
+		return pg.TranslateCreateTable(node)
+	}
 	return nil, nil
 }
 
@@ -119,6 +122,46 @@ func interpreteTargetList(targetList []*pg_query.Node) (core.ColumnNames, []Expr
 	}
 
 	return names, resExprs
+}
+
+func (pg *PGTranlator) TranslateCreateTable(stmt *pg_query.CreateStmt) (RelationalAlgebraNode, error) {
+	tableName := stmt.GetRelation().GetRelname()
+	colDefs := prepareColDefs(stmt.GetTableElts(), tableName)
+
+	return &CreateTableNode{
+		TableName:  tableName,
+		ColumnDefs: colDefs,
+	}, nil
+}
+
+func prepareColDefs(defNodes []*pg_query.Node, tableName string) core.Cols {
+	colTyps := make(core.Cols, 0, len(defNodes))
+	for _, defNode := range defNodes {
+		def := defNode.GetColumnDef()
+		name := def.GetColname()
+		typ := mapGoType(def.GetTypeName().GetNames()[1].GetString_().GetStr())
+		col := core.Col{
+			ColName: core.ColumnName{
+				TableName: tableName,
+				Name:      name,
+			},
+			ColType: typ,
+		}
+		colTyps = append(colTyps, col)
+	}
+
+	return colTyps
+}
+
+func mapGoType(typ string) core.ColType {
+	switch typ {
+	case "int4":
+		return core.Integer
+	case "varchar":
+		return core.VarChar
+	}
+
+	return core.Integer
 }
 
 func getColName(colRef *pg_query.ColumnRef) core.ColumnName {

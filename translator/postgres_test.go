@@ -63,3 +63,41 @@ func TestTranslateSelect(t *testing.T) {
 		})
 	}
 }
+
+func TestTranslateCreate(t *testing.T) {
+	var tests = []struct {
+		name      string
+		tableName string
+		expected  trans.RelationalAlgebraNode
+		query     string
+	}{
+		{
+			name:      "test translator",
+			tableName: "foo",
+			expected: &trans.CreateTableNode{
+				TableName: "foo",
+				ColumnDefs: core.Cols{
+					core.Col{
+						ColName: core.ColumnName{TableName: "foo", Name: "id"},
+						ColType: core.Integer,
+					},
+					core.Col{
+						ColName: core.ColumnName{TableName: "foo", Name: "name"},
+						ColType: core.VarChar,
+					},
+				},
+			},
+			query: "CREATE TABLE foo (id int, name varchar(255))",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			transl := trans.NewPGTranslator(tt.query)
+			actual, _ := transl.Translate()
+
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}

@@ -194,3 +194,15 @@ func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
 
 	return newTable, nil
 }
+
+type CreateTableNode struct {
+	TableName  string
+	ColumnDefs core.Cols
+}
+
+func (c *CreateTableNode) Eval(db backend.DB) (backend.Table, error) {
+	if err := db.CreateTable(c.TableName, c.ColumnDefs); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}

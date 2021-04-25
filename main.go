@@ -58,9 +58,16 @@ func prepareDB() backend.DB {
 		core.Values{nil, "World"},
 	}
 
-	db.CreateTable("hoge", cols)
+	// db.CreateTable("hoge", cols)
+	query := "create table hoge (id int, name varchar(255))"
+	raNode, _ := trans.NewPGTranslator(query).Translate()
+	_, err := raNode.Eval(db)
+	if _, err := raNode.Eval(db); err != nil {
+		fmt.Println("error:", err)
+	}
+
 	table, _ := db.GetTable("hoge")
-	err := table.(*backend.DBTable).Insert(colNames, vals)
+	err = table.(*backend.DBTable).Insert(colNames, vals)
 	if err != nil {
 		fmt.Println(err)
 	}

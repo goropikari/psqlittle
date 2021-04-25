@@ -35,6 +35,20 @@ func (m *MockDB) EXPECT() *MockDBMockRecorder {
 	return m.recorder
 }
 
+// CreateTable mocks base method.
+func (m *MockDB) CreateTable(arg0 string, arg1 core.Cols) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTable", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateTable indicates an expected call of CreateTable.
+func (mr *MockDBMockRecorder) CreateTable(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTable", reflect.TypeOf((*MockDB)(nil).CreateTable), arg0, arg1)
+}
+
 // GetTable mocks base method.
 func (m *MockDB) GetTable(arg0 string) (backend.Table, error) {
 	m.ctrl.T.Helper()

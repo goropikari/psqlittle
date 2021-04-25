@@ -12,6 +12,7 @@ import (
 // DB is interface of DBMS
 type DB interface {
 	GetTable(string) (Table, error)
+	CreateTable(string, core.Cols) error
 }
 
 // Table is interface of table.
