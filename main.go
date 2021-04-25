@@ -14,12 +14,13 @@ func main() {
 	db := prepareDB()
 
 	// evaluate query
-	query := "select hoge.name, hoge.id, 1000, 1.5, 'taro' from hoge"
+	query := "select hoge.name, hoge.id, *, 1000, 1.5, 'taro' from hoge"
 	// query := "select true=true, 1, 1000"
 	raNode, _ := trans.NewPGTranslator(query).Translate()
 	fmt.Println("raNode: ", raNode)
 	tb, _ := raNode.Eval(db)
 	rows := tb.GetRows()
+
 	for k, row := range rows {
 		fmt.Printf("row %v: %v\n", k, row)
 	}

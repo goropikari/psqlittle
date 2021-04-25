@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTranslate(t *testing.T) {
+func TestTranslateSelect(t *testing.T) {
 	var tests = []struct {
 		name     string
 		expected trans.RelationalAlgebraNode
@@ -33,6 +33,24 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			query: "SELECT foo.id, foo.name FROM foo",
+		},
+		{
+			name: "test wildcard",
+			expected: &trans.ProjectionNode{
+				TargetColNames: core.ColumnNames{
+					core.ColumnName{},
+				},
+				ResTargets: []trans.ExpressionNode{
+					trans.ColWildcardNode{},
+				},
+				Table: &trans.WhereNode{
+					Condition: nil,
+					Table: &trans.TableNode{
+						TableName: "foo",
+					},
+				},
+			},
+			query: "SELECT * FROM foo",
 		},
 	}
 	for _, tt := range tests {

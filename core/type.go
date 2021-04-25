@@ -27,12 +27,12 @@ type ColumnNames []ColumnName
 
 // Copy copies ColumnNames
 func (cn ColumnNames) Copy() ColumnNames {
-	ColumnNames := make(ColumnNames, 0, len(cn))
-	for _, name := range ColumnNames {
-		ColumnNames = append(ColumnNames, name.Copy())
+	names := make(ColumnNames, 0, len(cn))
+	for _, name := range cn {
+		names = append(names, name.Copy())
 	}
 
-	return ColumnNames
+	return names
 }
 
 // Equal checks the equality of ColumnName

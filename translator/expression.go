@@ -76,6 +76,22 @@ func (n ColRefNode) Eval() func(backend.Row) core.Value {
 	}
 }
 
+// ColWildcardNode is expression of integer
+type ColWildcardNode struct{}
+
+type WildcardType int
+
+const (
+	Wildcard WildcardType = iota
+)
+
+// Eval evaluates ColWildcardNode
+func (n ColWildcardNode) Eval() func(backend.Row) core.Value {
+	return func(backend.Row) core.Value {
+		return Wildcard
+	}
+}
+
 // NotNode is expression of Not
 type NotNode struct {
 	Expr ExpressionNode

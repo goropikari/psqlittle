@@ -51,8 +51,6 @@ func (pg *PGTranlator) TranslateSelect(pgtree *pg_query.SelectStmt) (RelationalA
 		ResTargets:     resTargetNodes,
 		Table:          whereNode,
 	}, nil
-
-	// return nil, nil
 }
 
 func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {
@@ -104,9 +102,14 @@ func interpreteTargetList(targetList []*pg_query.Node) (core.ColumnNames, []Expr
 	for _, target := range targetList {
 		val := target.GetResTarget().GetVal()
 		if colRef := val.GetColumnRef(); colRef != nil {
-			colName := getColName(colRef)
-			names = append(names, colName)
-			resExprs = append(resExprs, ColRefNode{ColName: colName})
+			if colRef.GetFields()[0].GetAStar() != nil {
+				resExprs = append(resExprs, ColWildcardNode{})
+				names = append(names, core.ColumnName{})
+			} else {
+				colName := getColName(colRef)
+				names = append(names, colName)
+				resExprs = append(resExprs, ColRefNode{ColName: colName})
+			}
 		} else {
 			// This column is not included in given table.
 			// The column is an expression.
@@ -133,7 +136,7 @@ func getColName(colRef *pg_query.ColumnRef) core.ColumnName {
 	}
 
 	// Not Implemented
-	// The column is included schema name or something.
+	// This columnRef includes schema name or something.
 	return core.ColumnName{}
 }
 

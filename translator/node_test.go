@@ -663,7 +663,7 @@ func TestEvalProjectionNode(t *testing.T) {
 	}{
 		{
 			name:       "select id",
-			targetCols: core.ColumnNames{cn2, cn1},
+			targetCols: core.ColumnNames{cn2, cn1, core.ColumnName{}},
 			table: &trans.TableNode{
 				TableName: "hoge",
 			},
@@ -673,11 +673,11 @@ func TestEvalProjectionNode(t *testing.T) {
 				trans.ColRefNode{cn1},
 				trans.IntegerNode{Val: someConst},
 			},
-			tableColNames: core.ColumnNames{cn1, cn2},
-			rowRes: core.ValuesList{
-				{123, "foo"},
-				{456, "bar"},
-				{789, "baz"},
+			tableColNames: core.ColumnNames{cn1, cn2, core.ColumnName{}},
+			rowRes: core.ValuesList{ // row mock response
+				{123, "foo", someConst},
+				{456, "bar", someConst},
+				{789, "baz", someConst},
 			},
 			expectedRowNum: 3,
 			expectedValuesList: core.ValuesList{

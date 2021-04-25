@@ -54,12 +54,32 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 	rows := newTable.GetRows()
 	newRows := make([]backend.Row, 0, len(rows))
 	for _, row := range rows {
-		vals := make(core.Values, 0, len(p.ResTargets))
-		for _, fn := range resFuncs {
-			vals = append(vals, fn(row))
+		colNames := make(core.ColumnNames, 0)
+		vals := make(core.Values, 0)
+		for k, fn := range resFuncs {
+			if v := fn(row); v != Wildcard {
+				vals = append(vals, v)
+				colNames = append(colNames, p.TargetColNames[k])
+			} else { // column wildcard
+				// Add values
+				for _, val := range row.GetValues() {
+					if val == nil {
+						// Fix me: nil should be converted
+						// when the value is inserted.
+						vals = append(vals, Null)
+					} else {
+						vals = append(vals, val)
+					}
+				}
+
+				// Add columns
+				for _, name := range newTable.GetColNames() {
+					colNames = append(colNames, name)
+				}
+			}
 		}
 		row.SetValues(vals)
-		row.SetColNames(p.TargetColNames)
+		row.SetColNames(colNames)
 		newRows = append(newRows, row)
 	}
 
