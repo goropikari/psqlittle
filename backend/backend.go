@@ -97,6 +97,12 @@ type DBRow struct {
 // DBRows is list of DBRow
 type DBRows []*DBRow
 
+type ErrColumnNotFound int
+
+const (
+	ColumnNotFound ErrColumnNotFound = iota
+)
+
 // GetValueByColName gets value from row by ColName
 func (r *DBRow) GetValueByColName(name core.ColumnName) core.Value {
 	for k, v := range r.ColNames {
@@ -104,7 +110,7 @@ func (r *DBRow) GetValueByColName(name core.ColumnName) core.Value {
 			return r.Values[k]
 		}
 	}
-	return nil
+	return ColumnNotFound
 }
 
 // GetValues gets values from DBRow

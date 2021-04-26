@@ -48,12 +48,6 @@ func (rt *RenameTableNode) Eval(db backend.DB) (backend.Table, error) {
 	newTable := tb.Copy()
 	newTable.UpdateTableName(rt.Alias)
 
-	fmt.Println(rt.Alias)
-	cols := newTable.GetColNames()
-	for _, cols := range cols {
-		fmt.Println(cols.TableName)
-	}
-
 	return newTable, nil
 }
 
@@ -88,6 +82,9 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 		vals := make(core.Values, 0)
 		for k, fn := range resFuncs {
 			if v := fn(row); v != Wildcard {
+				if v == backend.ColumnNotFound {
+					return nil, errors.New(fmt.Sprintf("column %v is not found", p.TargetColNames[k]))
+				}
 				vals = append(vals, v)
 				colNames = append(colNames, p.TargetColNames[k])
 			} else { // column wildcard
