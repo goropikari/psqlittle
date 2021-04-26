@@ -478,6 +478,8 @@ func mathOperator(op string) MathOp {
 		return GEQ
 	case "<=":
 		return LEQ
+	case "||":
+		return CONCAT
 	}
 
 	fmt.Println("Not Implemented math operator")
