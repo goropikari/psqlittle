@@ -181,6 +181,18 @@ func (mr *MockTableMockRecorder) SetRows(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRows", reflect.TypeOf((*MockTable)(nil).SetRows), arg0)
 }
 
+// UpdateTableName mocks base method.
+func (m *MockTable) UpdateTableName(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateTableName", arg0)
+}
+
+// UpdateTableName indicates an expected call of UpdateTableName.
+func (mr *MockTableMockRecorder) UpdateTableName(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTableName", reflect.TypeOf((*MockTable)(nil).UpdateTableName), arg0)
+}
+
 // MockRow is a mock of Row interface.
 type MockRow struct {
 	ctrl     *gomock.Controller

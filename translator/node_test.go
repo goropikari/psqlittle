@@ -752,6 +752,8 @@ func (s *SpyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error {
 	return nil
 }
 
+func (s *SpyTable) UpdateTableName(name string) {}
+
 type SpyRow struct {
 	MockRow  backend.Row
 	Values   core.Values

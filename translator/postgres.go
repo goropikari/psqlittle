@@ -115,12 +115,16 @@ func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {
 	for _, relation := range fromTree {
 		if relation.GetRangeVar() != nil {
 			tableName := relation.GetRangeVar().Relname
-			alias := relation.GetRangeVar().Alias
-			if alias == nil {
+			alias := relation.GetRangeVar().Alias.GetAliasname()
+			if alias == "" {
 				tables = append(tables, &TableNode{TableName: tableName})
 			} else {
-				// Not Implemented
-				// Construct Rename Node
+				tables = append(tables, &RenameTableNode{
+					Alias: alias,
+					Table: &TableNode{
+						TableName: tableName,
+					},
+				})
 			}
 		}
 		if relation.GetJoinExpr() != nil {

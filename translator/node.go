@@ -3,6 +3,9 @@ package translator
 //go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
 )
@@ -25,6 +28,33 @@ func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
 	}
 
 	return tb, err
+}
+
+type RenameTableNode struct {
+	Alias string
+	Table RelationalAlgebraNode
+}
+
+func (rt *RenameTableNode) Eval(db backend.DB) (backend.Table, error) {
+	if rt.Table == nil {
+		return nil, errors.New("have to include table")
+	}
+
+	tb, err := rt.Table.Eval(db)
+	if err != nil {
+		return nil, err
+	}
+
+	newTable := tb.Copy()
+	newTable.UpdateTableName(rt.Alias)
+
+	fmt.Println(rt.Alias)
+	cols := newTable.GetColNames()
+	for _, cols := range cols {
+		fmt.Println(cols.TableName)
+	}
+
+	return newTable, nil
 }
 
 // ProjectionNode is Node of projection operation
@@ -140,7 +170,8 @@ func (t *EmptyTable) GetRows() []backend.Row {
 	return rows
 }
 
-func (t *EmptyTable) SetRows(rows []backend.Row) {}
+func (t *EmptyTable) SetRows(rows []backend.Row)  {}
+func (t *EmptyTable) UpdateTableName(name string) {}
 
 type EmptyTableRow struct {
 	ColNames core.ColumnNames

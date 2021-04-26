@@ -23,6 +23,7 @@ type Table interface {
 	GetRows() []Row
 	SetRows([]Row)
 	InsertValues(core.ColumnNames, core.ValuesList) error
+	UpdateTableName(string)
 	// GetCols() []Col
 	// SetCols([]Col)
 }
@@ -267,6 +268,22 @@ func (t *DBTable) validateInsert(names core.ColumnNames, valuesList core.ValuesL
 	return nil
 }
 
+// UpdateTableName updates table name
+func (t *DBTable) UpdateTableName(name string) {
+	for i := 0; i < len(t.ColNames); i++ {
+		t.ColNames[i].TableName = name
+	}
+	for i := 0; i < len(t.Cols); i++ {
+		t.Cols[i].ColName.TableName = name
+	}
+
+	for i := 0; i < len(t.Rows); i++ {
+		for j := 0; j < len(t.Rows[i].ColNames); j++ {
+			t.Rows[i].ColNames[j].TableName = name
+		}
+	}
+}
+
 // Project is method to select columns of table.
 func (t *DBTable) Project(names core.ColumnNames) (DBRows, error) {
 	returnRows := make(DBRows, 0, 10)
@@ -284,15 +301,6 @@ func (t *DBTable) Project(names core.ColumnNames) (DBRows, error) {
 	}
 
 	return returnRows, nil
-}
-
-// Rename renames table name
-func (t *DBTable) Rename(tableName string) {
-	for i := 0; i < len(t.Cols); i++ {
-		col := t.Cols[i]
-		col.ColName.TableName = tableName
-		t.Cols[i] = col
-	}
 }
 
 func (t *DBTable) toIndex(names core.ColumnNames) ([]ColumnID, error) {
