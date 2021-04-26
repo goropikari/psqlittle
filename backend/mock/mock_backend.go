@@ -241,3 +241,15 @@ func (mr *MockRowMockRecorder) SetValues(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetValues", reflect.TypeOf((*MockRow)(nil).SetValues), arg0)
 }
+
+// UpdateValue mocks base method.
+func (m *MockRow) UpdateValue(arg0 core.ColumnName, arg1 core.Value) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateValue", arg0, arg1)
+}
+
+// UpdateValue indicates an expected call of UpdateValue.
+func (mr *MockRowMockRecorder) UpdateValue(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateValue", reflect.TypeOf((*MockRow)(nil).UpdateValue), arg0, arg1)
+}

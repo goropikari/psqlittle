@@ -1,6 +1,8 @@
 package translator
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/goropikari/mysqlite2/backend"
@@ -42,7 +44,38 @@ func (pg *PGTranlator) Translate() (RelationalAlgebraNode, error) {
 	if node := stmt.GetInsertStmt(); node != nil {
 		return pg.TranslateInsert(node)
 	}
-	return nil, nil
+	if node := stmt.GetUpdateStmt(); node != nil {
+		return pg.TranslateUpdate(node)
+	}
+	if node := stmt.GetDeleteStmt(); node != nil {
+		return pg.TranslateDelete(node)
+	}
+	return nil, errors.New("Not support such query")
+}
+
+// TranslateDelete translates sql parse tree into DeleteNode
+func (pg *PGTranlator) TranslateDelete(node *pg_query.DeleteStmt) (RelationalAlgebraNode, error) {
+	cond := constructExprNode(node.GetWhereClause())
+	tableName := node.GetRelation().Relname
+
+	return &DeleteNode{
+		Condition: cond,
+		TableName: tableName,
+	}, nil
+}
+
+// TranslateUpdate translates sql parse tree into UpdateNode
+func (pg *PGTranlator) TranslateUpdate(node *pg_query.UpdateStmt) (RelationalAlgebraNode, error) {
+	cond := constructExprNode(node.GetWhereClause())
+	tableName := node.GetRelation().Relname
+	targetColNames, resTargetNodes := interpreteUpdateTargetList(node.GetTargetList())
+
+	return &UpdateNode{
+		Condition:  cond,
+		ColNames:   targetColNames,
+		AssignExpr: resTargetNodes,
+		TableName:  tableName,
+	}, nil
 }
 
 // TranslateSelect translates postgres a select statement into ProjectionNode
@@ -123,6 +156,25 @@ func interpreteTargetList(targetList []*pg_query.Node) (core.ColumnNames, []Expr
 			names = append(names, core.ColumnName{})
 			resExprs = append(resExprs, constructExprNode(val))
 		}
+	}
+
+	return names, resExprs
+}
+
+func interpreteUpdateTargetList(targetList []*pg_query.Node) (core.ColumnNames, []ExpressionNode) {
+	if targetList == nil {
+		return nil, nil
+	}
+
+	names := make(core.ColumnNames, 0, len(targetList))
+	resExprs := make([]ExpressionNode, 0, len(targetList))
+	for _, target := range targetList {
+		tableName := target.GetResTarget().GetName()
+		colName := target.GetResTarget().GetIndirection()[0].GetString_().GetStr()
+		val := constructExprNode(target.GetResTarget().GetVal())
+
+		names = append(names, core.ColumnName{TableName: tableName, Name: colName})
+		resExprs = append(resExprs, val)
 	}
 
 	return names, resExprs
@@ -245,16 +297,123 @@ func constructExprNode(node *pg_query.Node) ExpressionNode {
 	if node.GetTypeCast() != nil {
 		return interpretTypeCast(node.GetTypeCast())
 	}
-	if node.GetAExpr() != nil {
-		return constructGetAExprNode(node.GetAExpr())
+	if v := node.GetAExpr(); v != nil {
+		return constructGetAExprNode(v)
 	}
-	if node.GetBoolExpr() != nil {
-		return nil
+	if v := node.GetBoolExpr(); v != nil {
+		return constructBoolExprNode(v)
+	}
+	if v := node.GetColumnRef(); v != nil {
+		return constructColumnRef(v)
+	}
+	if v := node.GetNullTest(); v != nil {
+		return constructNullTest(v)
+	}
+	if v := node.GetCaseExpr(); v != nil {
+		return constructCaseNode(v)
 	}
 
 	// Not Implemented
+	fmt.Println("Not Implemented")
 	dummy := IntegerNode{Val: -1 << 60}
 	return dummy
+}
+
+func constructCaseNode(node *pg_query.CaseExpr) ExpressionNode {
+	var caseWhenExprs, caseResultExprs []ExpressionNode
+	if arg := node.GetArg(); arg != nil {
+		caseWhenExprs, caseResultExprs = constructCaseWithArgNode(node)
+	} else {
+		caseWhenExprs, caseResultExprs = constructCaseWithoutArgNode(node)
+	}
+
+	var defRes ExpressionNode
+	if v := node.GetDefresult(); v != nil {
+		defRes = constructExprNode(v)
+	} else {
+		defRes = &BoolConstNode{Bool: Null}
+	}
+
+	return &CaseNode{
+		CaseWhenExprs:   caseWhenExprs,
+		CaseResultExprs: caseResultExprs,
+		DefaultResult:   defRes,
+	}
+}
+
+func constructCaseWithoutArgNode(node *pg_query.CaseExpr) ([]ExpressionNode, []ExpressionNode) {
+	caseWhenExprs := make([]ExpressionNode, 0)
+	caseResultExprs := make([]ExpressionNode, 0)
+	for _, caseWhen := range node.GetArgs() {
+		caseWhenExprs = append(caseWhenExprs, constructExprNode(caseWhen.GetCaseWhen().GetExpr()))
+		caseResultExprs = append(caseResultExprs,
+			constructExprNode(caseWhen.GetCaseWhen().GetResult()))
+	}
+
+	return caseWhenExprs, caseResultExprs
+}
+
+func constructCaseWithArgNode(node *pg_query.CaseExpr) ([]ExpressionNode, []ExpressionNode) {
+	arg := constructExprNode(node.GetArg())
+	caseWhenExprs := make([]ExpressionNode, 0)
+	caseResultExprs := make([]ExpressionNode, 0)
+	for _, caseWhen := range node.GetArgs() {
+		caseWhenExprs = append(caseWhenExprs,
+			BinOpNode{
+				Op:    EqualOp,
+				Lexpr: arg,
+				Rexpr: constructExprNode(caseWhen.GetCaseWhen().GetExpr()),
+			})
+		caseResultExprs = append(caseResultExprs,
+			constructExprNode(caseWhen.GetCaseWhen().GetResult()))
+	}
+
+	return caseWhenExprs, caseResultExprs
+
+}
+
+func constructNullTest(node *pg_query.NullTest) ExpressionNode {
+	expr := constructExprNode(node.GetArg())
+	testtyp := node.GetNulltesttype()
+	switch testtyp {
+	case 1: // is null
+		return &NullTestNode{
+			TestType: EqualNull,
+			Expr:     expr,
+		}
+	case 2: // is not null
+		return &NullTestNode{
+			TestType: NotEqualNull,
+			Expr:     expr,
+		}
+	}
+
+	return nil
+}
+
+func constructBoolExprNode(node *pg_query.BoolExpr) ExpressionNode {
+	opType := node.GetBoolop()
+	switch opType {
+	case 1: // AND
+		return &ANDNode{
+			Lexpr: constructExprNode(node.GetArgs()[0]),
+			Rexpr: constructExprNode(node.GetArgs()[1]),
+		}
+	case 2: // OR
+		return &ORNode{
+			Lexpr: constructExprNode(node.GetArgs()[0]),
+			Rexpr: constructExprNode(node.GetArgs()[1]),
+		}
+	}
+
+	return nil
+}
+
+func constructColumnRef(node *pg_query.ColumnRef) ExpressionNode {
+	colName := getColName(node)
+	return &ColRefNode{
+		ColName: colName,
+	}
 }
 
 func interpretTypeCast(c *pg_query.TypeCast) ExpressionNode {
@@ -279,12 +438,33 @@ func constructGetAExprNode(aExpr *pg_query.A_Expr) ExpressionNode {
 }
 
 func mathOperator(op string) MathOp {
+	// ref: translator/const.go: MathOp
+	// ref: translator/expression.go: func (e BinOpNode) Eval()
+
 	switch op {
 	case "=":
 		return EqualOp
-	case "!=":
+	case "!=", "<>":
 		return NotEqualOp
+	case "+":
+		return Plus
+	case "-":
+		return Minus
+	case "*":
+		return Multiply
+	case "/":
+		return Divide
+	case ">":
+		return GT
+	case "<":
+		return LT
+	case ">=":
+		return GEQ
+	case "<=":
+		return LEQ
 	}
+
+	fmt.Println("Not Implemented math operator")
 
 	return -1
 }

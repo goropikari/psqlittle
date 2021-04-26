@@ -3,26 +3,55 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/goropikari/mysqlite2/backend"
 	trans "github.com/goropikari/mysqlite2/translator"
 )
 
 func main() {
-	db := prepareDB()
+	// db := prepareDB()
 
-	// evaluate query
-	query := "select hoge.name, hoge.id, *, 1000, 1.5, 'taro' from hoge"
-	// query := "select true=true, 1, 1000"
-	raNode, _ := trans.NewPGTranslator(query).Translate()
-	fmt.Println("raNode: ", raNode)
-	tb, _ := raNode.Eval(db)
-	rows := tb.GetRows()
+	db := backend.NewDatabase()
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("sql> ")
+		query, err := reader.ReadString(';')
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if query == ".exit;" {
+			os.Exit(0)
+		}
+		query = strings.Trim(query, " \n")
+		if query == ";" {
+			continue
+		}
 
-	for k, row := range rows {
-		fmt.Printf("row %v: %v\n", k, row)
+		raNode, err := trans.NewPGTranslator(query).Translate()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		tb, err := raNode.Eval(db)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if tb == nil {
+			continue
+		}
+		rows := tb.GetRows()
+
+		for k, row := range rows {
+			fmt.Printf("row %v: %v\n", k, row.GetValues())
+		}
 	}
+
 }
 
 func prepareDB() backend.DB {

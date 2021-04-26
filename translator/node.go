@@ -157,8 +157,9 @@ func (r *EmptyTableRow) GetValues() core.Values {
 	return r.Values
 }
 
-func (r *EmptyTableRow) SetValues(vals core.Values)         {}
-func (r *EmptyTableRow) SetColNames(names core.ColumnNames) {}
+func (r *EmptyTableRow) SetValues(vals core.Values)                       {}
+func (r *EmptyTableRow) SetColNames(names core.ColumnNames)               {}
+func (r *EmptyTableRow) UpdateValue(name core.ColumnName, val core.Value) {}
 
 // WhereNode is Node of where clause
 type WhereNode struct {
@@ -211,7 +212,7 @@ func (c *CreateTableNode) Eval(db backend.DB) (backend.Table, error) {
 	return nil, nil
 }
 
-// InsertNode is a node of create statements
+// InsertNode is a node of create statement
 type InsertNode struct {
 	TableName   string
 	ColumnNames core.ColumnNames
@@ -225,6 +226,83 @@ func (c *InsertNode) Eval(db backend.DB) (backend.Table, error) {
 		return nil, err
 	}
 	tb.InsertValues(c.ColumnNames, c.ValuesList)
+
+	return nil, nil
+}
+
+// UpdateNode is a node of update statement
+type UpdateNode struct {
+	Condition  ExpressionNode
+	ColNames   core.ColumnNames
+	AssignExpr []ExpressionNode
+	TableName  string
+}
+
+// Eval evaluates UpdateNode
+func (u *UpdateNode) Eval(db backend.DB) (backend.Table, error) {
+	var condFunc func(backend.Row) core.Value
+	if u.Condition == nil {
+		condFunc = func(row backend.Row) core.Value {
+			return True
+		}
+	} else {
+		condFunc = u.Condition.Eval()
+	}
+
+	tb, err := db.GetTable(u.TableName)
+	if err != nil {
+		return nil, err
+	}
+
+	oldRows := tb.GetRows()
+	updatedRows := make([]backend.Row, 0, len(oldRows))
+	for _, row := range oldRows {
+		if condFunc(row) == True {
+			for k, name := range u.ColNames {
+				row.UpdateValue(name, u.AssignExpr[k].Eval()(row))
+			}
+		}
+		updatedRows = append(updatedRows, row)
+	}
+
+	tb.SetRows(updatedRows)
+
+	return nil, nil
+}
+
+// DeleteNode is a node of update statement
+type DeleteNode struct {
+	Condition ExpressionNode
+	TableName string
+}
+
+// Eval evaluates DeleteNode
+func (d *DeleteNode) Eval(db backend.DB) (backend.Table, error) {
+	var condFunc func(backend.Row) core.Value
+	if d.Condition == nil {
+		condFunc = func(row backend.Row) core.Value {
+			return True
+		}
+	} else {
+		condFunc = d.Condition.Eval()
+	}
+
+	tb, err := db.GetTable(d.TableName)
+	if err != nil {
+		return nil, err
+	}
+
+	oldRows := tb.GetRows()
+	updatedRows := make([]backend.Row, 0)
+	for _, row := range oldRows {
+		if condFunc(row) == True {
+			continue
+		} else {
+			updatedRows = append(updatedRows, row)
+		}
+	}
+
+	tb.SetRows(updatedRows)
 
 	return nil, nil
 }

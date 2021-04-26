@@ -122,7 +122,7 @@ func TestTranslateInsert(t *testing.T) {
 			query: "INSERT INTO foo values (1, 'mike')",
 		},
 		{
-			name:      "test insert",
+			name:      "test insert multi values",
 			tableName: "foo",
 			expected: &trans.InsertNode{
 				TableName: "foo",

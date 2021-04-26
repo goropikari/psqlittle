@@ -33,6 +33,7 @@ type Row interface {
 	GetValues() core.Values
 	SetValues(core.Values)
 	SetColNames(core.ColumnNames)
+	UpdateValue(core.ColumnName, core.Value)
 }
 
 // Database is struct for Database
@@ -108,6 +109,16 @@ func (r *DBRow) SetValues(vals core.Values) {
 // SetColNames sets column names into row
 func (r *DBRow) SetColNames(names core.ColumnNames) {
 	r.ColNames = names
+}
+
+// UpdateValue updates value by specifing column name
+func (r *DBRow) UpdateValue(name core.ColumnName, val core.Value) {
+	for k, colName := range r.ColNames {
+		// fmt.Println("colName:", colName, "givenName:", name)
+		if colName == name {
+			r.Values[k] = val
+		}
+	}
 }
 
 // Copy copies DBRow

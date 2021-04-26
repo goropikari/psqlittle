@@ -1,6 +1,8 @@
 package translator
 
 import (
+	"fmt"
+
 	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
 )
@@ -151,6 +153,26 @@ func (n NullTestNode) Eval() func(backend.Row) core.Value {
 	}
 }
 
+// CaseNode is expression of CaseNode
+type CaseNode struct {
+	CaseWhenExprs   []ExpressionNode
+	CaseResultExprs []ExpressionNode
+	DefaultResult   ExpressionNode
+}
+
+// Eval evaluates CaseNode
+func (c *CaseNode) Eval() func(backend.Row) core.Value {
+	return func(row backend.Row) core.Value {
+		for k, expr := range c.CaseWhenExprs {
+			if expr.Eval()(row) == True {
+				return c.CaseResultExprs[k].Eval()(row)
+			}
+		}
+
+		return c.DefaultResult.Eval()(row)
+	}
+}
+
 // BinOpNode is expression of BinOpNode
 type BinOpNode struct {
 	Op    MathOp
@@ -160,6 +182,8 @@ type BinOpNode struct {
 
 // Eval evaluates BinOpNode
 func (e BinOpNode) Eval() func(backend.Row) core.Value {
+	// ref: translator/const.go: MathOp
+	// ref: translator/postgres.go: func mathOperator()
 	return func(row backend.Row) core.Value {
 		l := e.Lexpr.Eval()(row)
 		r := e.Rexpr.Eval()(row)
@@ -167,17 +191,37 @@ func (e BinOpNode) Eval() func(backend.Row) core.Value {
 			return Null
 		}
 
-		truth := false
 		switch e.Op {
 		case EqualOp:
-			truth = l == r
+			return toSQLBool(l == r)
 		case NotEqualOp:
-			truth = l != r
+			return toSQLBool(l != r)
+		case Plus:
+			return l.(int) + r.(int)
+		case Minus:
+			return l.(int) - r.(int)
+		case Multiply:
+			return l.(int) * r.(int)
+		case Divide:
+			return l.(int) / r.(int)
+		case GT:
+			return toSQLBool(l.(int) > r.(int))
+		case LT:
+			return toSQLBool(l.(int) < r.(int))
+		case GEQ:
+			return toSQLBool(l.(int) >= r.(int))
+		case LEQ:
+			return toSQLBool(l.(int) <= r.(int))
 		}
 
-		if truth {
-			return True
-		}
-		return False
+		fmt.Println("Not Implemented")
+		return Null
 	}
+}
+
+func toSQLBool(b bool) BoolType {
+	if b {
+		return True
+	}
+	return False
 }

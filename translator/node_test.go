@@ -773,3 +773,4 @@ func (r *SpyRow) SetValues(values core.Values) {
 func (r *SpyRow) SetColNames(names core.ColumnNames) {
 	r.ColNames = names
 }
+func (r *SpyRow) UpdateValue(name core.ColumnName, val core.Value) {}

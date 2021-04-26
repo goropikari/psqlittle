@@ -1,3 +1,6 @@
+build:
+	go build -o bin/repl repl/main.go
+
 test: mockgen
 	go test $(shell go list ./...)
 
