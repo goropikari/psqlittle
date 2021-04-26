@@ -55,16 +55,16 @@ func (rt *RenameTableNode) Eval(db backend.DB) (backend.Table, error) {
 type ProjectionNode struct {
 	ResTargets     []ExpressionNode
 	TargetColNames core.ColumnNames
-	Table          RelationalAlgebraNode
+	RANode         RelationalAlgebraNode
 }
 
 // Eval evaluates ProjectionNode
 func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
-	if p.Table == nil {
+	if p.RANode == nil {
 		return nil, nil
 	}
 
-	tb, err := p.Table.Eval(db)
+	tb, err := p.RANode.Eval(db)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ func TestTranslateSelect(t *testing.T) {
 					trans.ColRefNode{core.ColumnName{TableName: "foo", Name: "id"}},
 					trans.ColRefNode{core.ColumnName{TableName: "foo", Name: "name"}},
 				},
-				Table: &trans.WhereNode{
+				RANode: &trans.WhereNode{
 					Condition: nil,
 					Table: &trans.TableNode{
 						TableName: "foo",
@@ -43,7 +43,7 @@ func TestTranslateSelect(t *testing.T) {
 				ResTargets: []trans.ExpressionNode{
 					trans.ColWildcardNode{},
 				},
-				Table: &trans.WhereNode{
+				RANode: &trans.WhereNode{
 					Condition: nil,
 					Table: &trans.TableNode{
 						TableName: "foo",

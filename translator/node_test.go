@@ -705,7 +705,7 @@ func TestEvalProjectionNode(t *testing.T) {
 			projectNode := trans.ProjectionNode{
 				ResTargets:     tt.resTargets,
 				TargetColNames: tt.targetCols,
-				Table:          tt.table,
+				RANode:         tt.table,
 			}
 
 			projectNode.Eval(db)

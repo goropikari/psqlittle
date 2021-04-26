@@ -105,7 +105,7 @@ func (pg *PGTranlator) TranslateSelect(pgtree *pg_query.SelectStmt) (RelationalA
 	return &ProjectionNode{
 		TargetColNames: targetColNames,
 		ResTargets:     resTargetNodes,
-		Table:          whereNode,
+		RANode:         whereNode,
 	}, nil
 }
 
