@@ -41,6 +41,9 @@ func (pg *PGTranlator) Translate() (RelationalAlgebraNode, error) {
 	if node := stmt.GetCreateStmt(); node != nil {
 		return pg.TranslateCreateTable(node)
 	}
+	if node := stmt.GetDropStmt(); node != nil {
+		return pg.TranslateDropTable(node)
+	}
 	if node := stmt.GetInsertStmt(); node != nil {
 		return pg.TranslateInsert(node)
 	}
@@ -51,6 +54,19 @@ func (pg *PGTranlator) Translate() (RelationalAlgebraNode, error) {
 		return pg.TranslateDelete(node)
 	}
 	return nil, errors.New("Not support such query")
+}
+
+// TranslateDropTable translates sql parse tree into DropTableNode
+func (pg *PGTranlator) TranslateDropTable(node *pg_query.DropStmt) (RelationalAlgebraNode, error) {
+	tableList := node.GetObjects()
+	tableNames := make([]string, 0)
+	for _, tb := range tableList {
+		tableNames = append(tableNames, tb.GetList().GetItems()[0].GetString_().GetStr())
+	}
+
+	return &DropTableNode{
+		TableNames: tableNames,
+	}, nil
 }
 
 // TranslateDelete translates sql parse tree into DeleteNode

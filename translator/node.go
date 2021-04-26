@@ -198,7 +198,23 @@ func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
 	return newTable, nil
 }
 
-// CreateTableNode is a node of create statements
+// DropTableNode is a node of drop statement
+type DropTableNode struct {
+	TableNames []string
+}
+
+// Eval evaluates DropTableNode
+func (d *DropTableNode) Eval(db backend.DB) (backend.Table, error) {
+	for _, name := range d.TableNames {
+		if err := db.DropTable(name); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+// CreateTableNode is a node of create statement
 type CreateTableNode struct {
 	TableName  string
 	ColumnDefs core.Cols

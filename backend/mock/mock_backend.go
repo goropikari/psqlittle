@@ -49,6 +49,20 @@ func (mr *MockDBMockRecorder) CreateTable(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTable", reflect.TypeOf((*MockDB)(nil).CreateTable), arg0, arg1)
 }
 
+// DropTable mocks base method.
+func (m *MockDB) DropTable(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DropTable", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DropTable indicates an expected call of DropTable.
+func (mr *MockDBMockRecorder) DropTable(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DropTable", reflect.TypeOf((*MockDB)(nil).DropTable), arg0)
+}
+
 // GetTable mocks base method.
 func (m *MockDB) GetTable(arg0 string) (backend.Table, error) {
 	m.ctrl.T.Helper()

@@ -12,6 +12,7 @@ import (
 type DB interface {
 	GetTable(string) (Table, error)
 	CreateTable(string, core.Cols) error
+	DropTable(string) error
 }
 
 // Table is interface of table.
@@ -75,6 +76,15 @@ func (db *Database) GetTable(tableName string) (Table, error) {
 
 	tb := db.Tables[tableName]
 	return tb, nil
+}
+
+// DropTable drop table from DB
+func (db *Database) DropTable(tableName string) error {
+	if _, ok := db.Tables[tableName]; ok {
+		delete(db.Tables, tableName)
+		return nil
+	}
+	return ErrTableNotFound
 }
 
 // DBRow is struct of row of table
