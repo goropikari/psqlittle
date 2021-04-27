@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 // Not negates x
 func Not(x Value) Value {
 	if x == Null {
@@ -13,6 +15,7 @@ func Not(x Value) Value {
 	}
 
 	// Shouldn't reach this
+	fmt.Println("should n't reach this xxxxxxxxxxxxxxxxxxxxxxxxxx")
 	return Null
 }
 

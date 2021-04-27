@@ -89,6 +89,10 @@ func validateTargetColumn(tbCols core.ColumnNames, targets core.ColumnNames) err
 		if (tc == core.ColumnName{Name: "*"}) {
 			continue
 		}
+		if (tc == core.ColumnName{}) {
+			// expresison
+			continue
+		}
 		if !haveColumn(tc, tbCols) {
 			return fmt.Errorf(`column "%v" does not exist`, makeColName(tc))
 		}
