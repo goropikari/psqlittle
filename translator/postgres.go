@@ -311,7 +311,7 @@ func constructExprNode(node *pg_query.Node) ExpressionNode {
 			return StringNode{Val: val.GetString_().GetStr()}
 		}
 		if val.GetNull() != nil {
-			return BoolConstNode{Bool: Null}
+			return BoolConstNode{Bool: core.Null}
 		}
 	}
 	if node.GetTypeCast() != nil {
@@ -351,7 +351,7 @@ func constructCaseNode(node *pg_query.CaseExpr) ExpressionNode {
 	if v := node.GetDefresult(); v != nil {
 		defRes = constructExprNode(v)
 	} else {
-		defRes = &BoolConstNode{Bool: Null}
+		defRes = &BoolConstNode{Bool: core.Null}
 	}
 
 	return &CaseNode{
@@ -440,9 +440,9 @@ func interpretTypeCast(c *pg_query.TypeCast) ExpressionNode {
 	// Now, only support bool
 	boolStr := c.GetArg().GetAConst().GetVal().GetString_().GetStr()
 	if boolStr == "t" {
-		return BoolConstNode{Bool: True}
+		return BoolConstNode{Bool: core.True}
 	}
-	return BoolConstNode{Bool: False}
+	return BoolConstNode{Bool: core.False}
 }
 
 func constructGetAExprNode(aExpr *pg_query.A_Expr) ExpressionNode {

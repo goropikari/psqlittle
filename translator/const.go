@@ -1,19 +1,5 @@
 package translator
 
-// BoolType express SQL boolean including Null
-type BoolType int
-
-const (
-	// True is true of BoolType
-	True BoolType = iota
-
-	// False is false of BoolType
-	False
-
-	// Null is null of BoolType
-	Null
-)
-
 // NullTestType is Null test type
 type NullTestType int
 

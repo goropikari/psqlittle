@@ -198,30 +198,43 @@ func TestInsert(t *testing.T) {
 
 func TestProject(t *testing.T) {
 
+	cn1 := core.ColumnName{TableName: "hoge", Name: "id"}
+	cn2 := core.ColumnName{TableName: "hoge", Name: "name"}
+
+	fn1 := func(row Row) core.Value {
+		return row.GetValueByColName(cn1)
+	}
+	fn2 := func(row Row) core.Value {
+		return row.GetValueByColName(cn2)
+	}
+
 	tests := []struct {
 		name          string
 		expected      DBRows
 		givenTable    DBTable
 		givenColNames core.ColumnNames
+		givenFncs     []func(row Row) core.Value
 	}{
 		{
 			name: "test project columns",
 			givenTable: DBTable{
-				Cols: core.Cols{
-					{
-						ColName: core.ColumnName{TableName: "hoge", Name: "id"},
-						ColType: core.Integer,
-					},
-					{
-						ColName: core.ColumnName{TableName: "hoge", Name: "name"},
-						ColType: core.VarChar,
-					},
+				ColNames: core.ColumnNames{
+					{TableName: "hoge", Name: "id"},
+					{TableName: "hoge", Name: "name"},
 				},
 				Rows: DBRows{
 					{
+						ColNames: core.ColumnNames{
+							{TableName: "hoge", Name: "id"},
+							{TableName: "hoge", Name: "name"},
+						},
 						Values: core.Values{1, "Hello"},
 					},
 					{
+						ColNames: core.ColumnNames{
+							{TableName: "hoge", Name: "id"},
+							{TableName: "hoge", Name: "name"},
+						},
 						Values: core.Values{2, "World"},
 					},
 				},
@@ -231,6 +244,7 @@ func TestProject(t *testing.T) {
 				{TableName: "hoge", Name: "name"},
 				{TableName: "hoge", Name: "id"},
 			},
+			givenFncs: []func(Row) core.Value{fn1, fn2},
 			expected: DBRows{
 				{
 					Values: core.Values{"Hello", 1, "Hello"},
@@ -245,7 +259,7 @@ func TestProject(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := tt.givenTable.Project(tt.givenColNames)
+			actual, err := tt.givenTable.Project(tt.givenColNames, tt.givenFncs)
 
 			assert.NotEqual(t, tt.expected, actual)
 			assert.NoError(t, err)

@@ -17,103 +17,103 @@ func TestORNode(t *testing.T) {
 	var tests = []struct {
 		name     string
 		node     trans.ExpressionNode
-		expected trans.BoolType
+		expected core.BoolType
 	}{
 		{
 			name: "True or True",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "True or False",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "False or True",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "False or False",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "True or Null",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "Null or True",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "False or Null",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 		{
 			name: "Null or False",
 			node: trans.ORNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 	}
 
@@ -136,131 +136,131 @@ func TestANDNode(t *testing.T) {
 	var tests = []struct {
 		name     string
 		node     trans.ExpressionNode
-		expected trans.BoolType
+		expected core.BoolType
 	}{
 		{
 			name: "True and True",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "True and False",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "False and True",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "False and False",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "True and Null",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 		{
 			name: "Null or True",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 		{
 			name: "False and Null",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "Null and False",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "Null and not False",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 				Rexpr: trans.NotNode{
 					Expr: trans.BoolConstNode{
-						Bool: trans.False,
+						Bool: core.False,
 					},
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 		{
 			name: "Null and not True",
 			node: trans.ANDNode{
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 				Rexpr: trans.NotNode{
 					Expr: trans.BoolConstNode{
-						Bool: trans.True,
+						Bool: core.True,
 					},
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 	}
 
@@ -291,20 +291,20 @@ func TestNullTestNode(t *testing.T) {
 			node: trans.NullTestNode{
 				TestType: trans.EqualNull,
 				Expr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "Null is not Null",
 			node: trans.NullTestNode{
 				TestType: trans.NotEqualNull,
 				Expr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "0 = Null",
@@ -314,7 +314,7 @@ func TestNullTestNode(t *testing.T) {
 					Val: 0,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "1 = Null",
@@ -324,7 +324,7 @@ func TestNullTestNode(t *testing.T) {
 					Val: 1,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "2 = Null",
@@ -334,7 +334,7 @@ func TestNullTestNode(t *testing.T) {
 					Val: 2,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "id is null (if id's value is null)",
@@ -348,7 +348,7 @@ func TestNullTestNode(t *testing.T) {
 				},
 			},
 			rowRes:   nil,
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "id is null (if id's value is 1)",
@@ -362,7 +362,7 @@ func TestNullTestNode(t *testing.T) {
 				},
 			},
 			rowRes:   1,
-			expected: trans.False,
+			expected: core.False,
 		},
 	}
 
@@ -399,7 +399,7 @@ func TestBinOpNode(t *testing.T) {
 					Val: 1,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "1 = 2",
@@ -412,7 +412,7 @@ func TestBinOpNode(t *testing.T) {
 					Val: 2,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "1 != 2",
@@ -425,7 +425,7 @@ func TestBinOpNode(t *testing.T) {
 					Val: 2,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "1 = null",
@@ -435,10 +435,10 @@ func TestBinOpNode(t *testing.T) {
 					Val: 1,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 		{
 			name: "1 != null",
@@ -448,62 +448,62 @@ func TestBinOpNode(t *testing.T) {
 					Val: 1,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.Null,
+					Bool: core.Null,
 				},
 			},
-			expected: trans.Null,
+			expected: core.Null,
 		},
 		{
 			name: "True = True",
 			node: trans.BinOpNode{
 				Op: trans.EqualOp,
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 		{
 			name: "True = False",
 			node: trans.BinOpNode{
 				Op: trans.EqualOp,
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "True != True",
 			node: trans.BinOpNode{
 				Op: trans.NotEqualOp,
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 			},
-			expected: trans.False,
+			expected: core.False,
 		},
 		{
 			name: "True != False",
 			node: trans.BinOpNode{
 				Op: trans.NotEqualOp,
 				Lexpr: trans.BoolConstNode{
-					Bool: trans.True,
+					Bool: core.True,
 				},
 				Rexpr: trans.BoolConstNode{
-					Bool: trans.False,
+					Bool: core.False,
 				},
 			},
-			expected: trans.True,
+			expected: core.True,
 		},
 	}
 
@@ -625,103 +625,8 @@ func TestEvalWhereNode(t *testing.T) {
 	}
 }
 
-func TestEvalProjectionNode(t *testing.T) {
-
-	cn1 := core.ColumnName{
-		TableName: "hoge",
-		Name:      "id",
-	}
-	cn2 := core.ColumnName{
-		TableName: "hoge",
-		Name:      "name",
-	}
-
-	const someConst = 10
-
-	var tests = []struct {
-		name               string
-		targetCols         core.ColumnNames
-		resTargets         []trans.ExpressionNode
-		table              trans.RelationalAlgebraNode
-		tableName          string
-		tableColNames      core.ColumnNames
-		rowRes             core.ValuesList
-		expectedRowNum     int
-		expectedValuesList core.ValuesList
-	}{
-		{
-			name:       "select id",
-			targetCols: core.ColumnNames{cn2, cn1, core.ColumnName{}},
-			table: &trans.TableNode{
-				TableName: "hoge",
-			},
-			tableName: "hoge",
-			resTargets: []trans.ExpressionNode{
-				trans.ColRefNode{cn2},
-				trans.ColRefNode{cn1},
-				trans.IntegerNode{Val: someConst},
-			},
-			tableColNames: core.ColumnNames{cn1, cn2, core.ColumnName{}},
-			rowRes: core.ValuesList{ // row mock response
-				{123, "foo", someConst},
-				{456, "bar", someConst},
-				{789, "baz", someConst},
-			},
-			expectedRowNum: 3,
-			expectedValuesList: core.ValuesList{
-				{"foo", 123, someConst},
-				{"bar", 456, someConst},
-				{"baz", 789, someConst},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-			mockRows := []backend.Row{}
-			for _, vals := range tt.rowRes {
-				row := mock.NewMockRow(ctrl)
-				for k, col := range tt.tableColNames {
-					row.EXPECT().GetValueByColName(col).Return(vals[k]).AnyTimes()
-				}
-				row.EXPECT().SetValues(gomock.Any()).AnyTimes()
-				mockRows = append(mockRows, &SpyRow{MockRow: row})
-			}
-			table := mock.NewMockTable(ctrl)
-			table.EXPECT().GetRows().Return(mockRows).AnyTimes()
-
-			count := 0
-			spyTable := &SpyTable{
-				Table:       table,
-				ResultCount: &count,
-			}
-			db := mock.NewMockDB(ctrl)
-			db.EXPECT().GetTable(tt.tableName).Return(spyTable, nil).AnyTimes()
-
-			projectNode := trans.ProjectionNode{
-				ResTargets:     tt.resTargets,
-				TargetColNames: tt.targetCols,
-				RANode:         tt.table,
-			}
-
-			projectNode.Eval(db)
-
-			if count != tt.expectedRowNum {
-				t.Errorf("expected %v, actual %v", tt.expectedRowNum, count)
-			}
-
-			resValsList := make(core.ValuesList, 0, len(mockRows))
-			for _, row := range mockRows {
-				resValsList = append(resValsList, row.(*SpyRow).Values)
-			}
-			assert.Equal(t, tt.expectedValuesList, resValsList)
-		})
-	}
-}
+// TODO: Add test
+// ProjectionNode
 
 type SpyTable struct {
 	Table       backend.Table
@@ -745,14 +650,15 @@ func (s *SpyTable) GetColNames() core.ColumnNames {
 	return s.Table.GetColNames()
 }
 
-func (s *SpyTable) SetColNames(names core.ColumnNames) {
-}
-
 func (s *SpyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error {
 	return nil
 }
 
 func (s *SpyTable) UpdateTableName(name string) {}
+
+func (s *SpyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
 
 type SpyRow struct {
 	MockRow  backend.Row

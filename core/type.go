@@ -1,5 +1,25 @@
 package core
 
+// BoolType express SQL boolean including Null
+type BoolType int
+
+const (
+	// True is true of BoolType
+	True BoolType = iota
+
+	// False is false of BoolType
+	False
+
+	// Null is null of BoolType
+	Null
+)
+
+type WildcardType int
+
+const (
+	Wildcard WildcardType = iota
+)
+
 // ColType is a type of column
 type ColType int
 

@@ -1,9 +1,7 @@
-package translator
-
-import "github.com/goropikari/mysqlite2/core"
+package core
 
 // Not negates x
-func Not(x core.Value) core.Value {
+func Not(x Value) Value {
 	if x == Null {
 		return Null
 	}
@@ -19,7 +17,7 @@ func Not(x core.Value) core.Value {
 }
 
 // OR calculates x OR y
-func OR(x, y core.Value) core.Value {
+func OR(x, y Value) Value {
 	// memo:
 	// True or Null -> True
 	// Null or True -> True
@@ -38,7 +36,7 @@ func OR(x, y core.Value) core.Value {
 }
 
 // AND calculates x AND y
-func AND(x, y core.Value) core.Value {
+func AND(x, y Value) Value {
 	// memo:
 	// True and Null -> Null
 	// Null and True -> Null

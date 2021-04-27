@@ -17,7 +17,7 @@ type ExpressionNode interface {
 
 // BoolConstNode is expression of boolean const
 type BoolConstNode struct {
-	Bool BoolType
+	Bool core.BoolType
 }
 
 // Eval evaluates BoolConstNode
@@ -73,7 +73,7 @@ func (n ColRefNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
 		val := row.GetValueByColName(n.ColName)
 		if val == nil {
-			return Null
+			return core.Null
 		}
 		return val
 	}
@@ -82,16 +82,10 @@ func (n ColRefNode) Eval() func(backend.Row) core.Value {
 // ColWildcardNode is expression of integer
 type ColWildcardNode struct{}
 
-type WildcardType int
-
-const (
-	Wildcard WildcardType = iota
-)
-
 // Eval evaluates ColWildcardNode
 func (n ColWildcardNode) Eval() func(backend.Row) core.Value {
 	return func(backend.Row) core.Value {
-		return Wildcard
+		return core.Wildcard
 	}
 }
 
@@ -103,7 +97,7 @@ type NotNode struct {
 // Eval evaluates NotNode
 func (nn NotNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
-		return Not(nn.Expr.Eval()(row))
+		return core.Not(nn.Expr.Eval()(row))
 	}
 }
 
@@ -116,7 +110,7 @@ type ORNode struct {
 // Eval evaluates ORNode
 func (orn ORNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
-		return OR(orn.Lexpr.Eval()(row), orn.Rexpr.Eval()(row))
+		return core.OR(orn.Lexpr.Eval()(row), orn.Rexpr.Eval()(row))
 	}
 }
 
@@ -129,7 +123,7 @@ type ANDNode struct {
 // Eval evaluates ANDNode
 func (andn ANDNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
-		return AND(andn.Lexpr.Eval()(row), andn.Rexpr.Eval()(row))
+		return core.AND(andn.Lexpr.Eval()(row), andn.Rexpr.Eval()(row))
 	}
 }
 
@@ -143,14 +137,14 @@ type NullTestNode struct {
 func (n NullTestNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
 		val := n.Expr.Eval()(row)
-		truth := False
-		if val == Null {
-			truth = True
+		truth := core.False
+		if val == core.Null {
+			truth = core.True
 		}
 		if n.TestType == EqualNull {
 			return truth
 		}
-		return Not(truth)
+		return core.Not(truth)
 	}
 }
 
@@ -165,7 +159,7 @@ type CaseNode struct {
 func (c *CaseNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
 		for k, expr := range c.CaseWhenExprs {
-			if expr.Eval()(row) == True {
+			if expr.Eval()(row) == core.True {
 				return c.CaseResultExprs[k].Eval()(row)
 			}
 		}
@@ -188,8 +182,8 @@ func (e BinOpNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
 		l := e.Lexpr.Eval()(row)
 		r := e.Rexpr.Eval()(row)
-		if l == Null || r == Null {
-			return Null
+		if l == core.Null || r == core.Null {
+			return core.Null
 		}
 
 		switch e.Op {
@@ -221,7 +215,7 @@ func (e BinOpNode) Eval() func(backend.Row) core.Value {
 		}
 
 		fmt.Println("Not Implemented")
-		return Null
+		return core.Null
 	}
 }
 
@@ -335,9 +329,9 @@ func compStrStr(op MathOp, l core.Value, r core.Value) core.Value {
 	return nil
 }
 
-func toSQLBool(b bool) BoolType {
+func toSQLBool(b bool) core.BoolType {
 	if b {
-		return True
+		return core.True
 	}
-	return False
+	return core.False
 }

@@ -4,7 +4,6 @@ package translator
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
@@ -75,47 +74,7 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 
 	resFuncs := p.constructResFunc()
 
-	rows := newTable.GetRows()
-	newRows := make([]backend.Row, 0, len(rows))
-	for _, row := range rows {
-		colNames := make(core.ColumnNames, 0)
-		vals := make(core.Values, 0)
-		for k, fn := range resFuncs {
-			if v := fn(row); v != Wildcard {
-				if v == backend.ColumnNotFound {
-					return nil, errors.New(fmt.Sprintf("column %v is not found", p.TargetColNames[k]))
-				}
-				vals = append(vals, v)
-				colNames = append(colNames, p.TargetColNames[k])
-			} else { // column wildcard
-				// Add values
-				for _, val := range row.GetValues() {
-					if val == nil {
-						// Fix me: nil should be converted
-						// when the value is inserted.
-						vals = append(vals, Null)
-					} else {
-						vals = append(vals, val)
-					}
-				}
-
-				// Add columns
-				for _, name := range newTable.GetColNames() {
-					colNames = append(colNames, name)
-				}
-			}
-		}
-		row.SetValues(vals)
-		row.SetColNames(colNames)
-		newRows = append(newRows, row)
-	}
-
-	newTable.SetRows(newRows)
-	newTable.SetColNames(p.TargetColNames)
-	// TODO: implement SetCols if type validation is implemented
-	// newTable.SetCols(cols)
-
-	return newTable, nil
+	return newTable.Project(p.TargetColNames, resFuncs)
 }
 
 func (p *ProjectionNode) constructResFunc() []func(row backend.Row) core.Value {
@@ -157,8 +116,6 @@ func (t *EmptyTable) GetColNames() core.ColumnNames {
 	return t.ColNames
 }
 
-func (t *EmptyTable) SetColNames(names core.ColumnNames) {}
-
 func (t *EmptyTable) GetRows() []backend.Row {
 	rows := make([]backend.Row, 0, len(t.Rows))
 	for _, row := range t.Rows {
@@ -167,7 +124,7 @@ func (t *EmptyTable) GetRows() []backend.Row {
 	return rows
 }
 
-func (t *EmptyTable) SetRows(rows []backend.Row)  {}
+func (t *EmptyTable) SetRows([]backend.Row)       {}
 func (t *EmptyTable) UpdateTableName(name string) {}
 
 type EmptyTableRow struct {
@@ -176,6 +133,10 @@ type EmptyTableRow struct {
 }
 
 func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
+
+func (t *EmptyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
 
 func (r *EmptyTableRow) GetValueByColName(core.ColumnName) core.Value {
 	return nil
@@ -214,9 +175,10 @@ func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
 	srcRows := newTable.GetRows()
 	condFunc := wn.Condition.Eval()
 
+	// FIX ME
 	rows := make([]backend.Row, 0, len(srcRows))
 	for _, row := range srcRows {
-		if condFunc(row) == True {
+		if condFunc(row) == core.True {
 			rows = append(rows, row)
 		}
 	}
@@ -287,7 +249,7 @@ func (u *UpdateNode) Eval(db backend.DB) (backend.Table, error) {
 	var condFunc func(backend.Row) core.Value
 	if u.Condition == nil {
 		condFunc = func(row backend.Row) core.Value {
-			return True
+			return core.True
 		}
 	} else {
 		condFunc = u.Condition.Eval()
@@ -301,7 +263,7 @@ func (u *UpdateNode) Eval(db backend.DB) (backend.Table, error) {
 	oldRows := tb.GetRows()
 	updatedRows := make([]backend.Row, 0, len(oldRows))
 	for _, row := range oldRows {
-		if condFunc(row) == True {
+		if condFunc(row) == core.True {
 			for k, name := range u.ColNames {
 				row.UpdateValue(name, u.AssignExpr[k].Eval()(row))
 			}
@@ -325,7 +287,7 @@ func (d *DeleteNode) Eval(db backend.DB) (backend.Table, error) {
 	var condFunc func(backend.Row) core.Value
 	if d.Condition == nil {
 		condFunc = func(row backend.Row) core.Value {
-			return True
+			return core.True
 		}
 	} else {
 		condFunc = d.Condition.Eval()
@@ -339,7 +301,7 @@ func (d *DeleteNode) Eval(db backend.DB) (backend.Table, error) {
 	oldRows := tb.GetRows()
 	updatedRows := make([]backend.Row, 0)
 	for _, row := range oldRows {
-		if condFunc(row) == True {
+		if condFunc(row) == core.True {
 			continue
 		} else {
 			updatedRows = append(updatedRows, row)

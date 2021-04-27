@@ -4,6 +4,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/goropikari/mysqlite2/core"
 )
@@ -19,11 +20,11 @@ type DB interface {
 type Table interface {
 	Copy() Table
 	GetColNames() core.ColumnNames
-	SetColNames(core.ColumnNames)
 	GetRows() []Row
 	SetRows([]Row)
 	InsertValues(core.ColumnNames, core.ValuesList) error
 	UpdateTableName(string)
+	Project(core.ColumnNames, []func(Row) core.Value) (Table, error)
 	// GetCols() []Col
 	// SetCols([]Col)
 }
@@ -291,22 +292,68 @@ func (t *DBTable) UpdateTableName(name string) {
 }
 
 // Project is method to select columns of table.
-func (t *DBTable) Project(names core.ColumnNames) (DBRows, error) {
-	returnRows := make(DBRows, 0, 10)
-	idxs, err := t.toIndex(names)
-	if err != nil {
-		return nil, err
-	}
+// Deprecated
+// func (t *DBTable) Project(names core.ColumnNames) (DBRows, error) {
+// 	returnRows := make(DBRows, 0, 10)
+// 	idxs, err := t.toIndex(names)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	for _, row := range t.Rows {
+// 		returnRow := &DBRow{}
+// 		for _, i := range idxs {
+// 			returnRow.Values = append(returnRow.Values, row.getByID(i))
+// 		}
+// 		returnRows = append(returnRows, returnRow)
+// 	}
+//
+// 	return returnRows, nil
+// }
 
-	for _, row := range t.Rows {
-		returnRow := &DBRow{}
-		for _, i := range idxs {
-			returnRow.Values = append(returnRow.Values, row.getByID(i))
+// Project is method to select columns of table.
+func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) core.Value) (Table, error) {
+	rows := t.GetRows()
+	newRows := make([]Row, 0, len(rows))
+	for _, row := range rows {
+		colNames := make(core.ColumnNames, 0)
+		vals := make(core.Values, 0)
+		for k, fn := range resFuncs {
+			if v := fn(row); v != core.Wildcard {
+				if v == ColumnNotFound {
+					return nil, fmt.Errorf("column %v is not found", TargetColNames[k])
+				}
+				vals = append(vals, v)
+				colNames = append(colNames, TargetColNames[k])
+			} else { // column wildcard
+				// Add values
+				for _, val := range row.GetValues() {
+					if val == nil {
+						// Fix me: nil should be converted
+						// when the value is inserted.
+						vals = append(vals, core.Null)
+					} else {
+						vals = append(vals, val)
+					}
+				}
+
+				// Add columns
+				for _, name := range t.GetColNames() {
+					colNames = append(colNames, name)
+				}
+			}
 		}
-		returnRows = append(returnRows, returnRow)
+		row.SetValues(vals)
+		row.SetColNames(colNames)
+		newRows = append(newRows, row)
 	}
 
-	return returnRows, nil
+	t.SetRows(newRows)
+	t.SetColNames(TargetColNames)
+	// TODO: implement SetCols if type validation is implemented
+	// newTable.SetCols(cols)
+
+	return t, nil
 }
 
 func (t *DBTable) toIndex(names core.ColumnNames) ([]ColumnID, error) {

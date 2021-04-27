@@ -157,16 +157,19 @@ func (mr *MockTableMockRecorder) InsertValues(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertValues", reflect.TypeOf((*MockTable)(nil).InsertValues), arg0, arg1)
 }
 
-// SetColNames mocks base method.
-func (m *MockTable) SetColNames(arg0 core.ColumnNames) {
+// Project mocks base method.
+func (m *MockTable) Project(arg0 core.ColumnNames, arg1 []func(backend.Row) core.Value) (backend.Table, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetColNames", arg0)
+	ret := m.ctrl.Call(m, "Project", arg0, arg1)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// SetColNames indicates an expected call of SetColNames.
-func (mr *MockTableMockRecorder) SetColNames(arg0 interface{}) *gomock.Call {
+// Project indicates an expected call of Project.
+func (mr *MockTableMockRecorder) Project(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetColNames", reflect.TypeOf((*MockTable)(nil).SetColNames), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Project", reflect.TypeOf((*MockTable)(nil).Project), arg0, arg1)
 }
 
 // SetRows mocks base method.
