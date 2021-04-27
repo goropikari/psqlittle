@@ -137,14 +137,19 @@ type NullTestNode struct {
 func (n NullTestNode) Eval() func(backend.Row) core.Value {
 	return func(row backend.Row) core.Value {
 		val := n.Expr.Eval()(row)
-		truth := core.False
-		if val == core.Null {
-			truth = core.True
-		}
+		// val is null
 		if n.TestType == EqualNull {
-			return truth
+			if val == core.Null {
+				return core.True
+			}
+			return core.False
 		}
-		return core.Not(truth)
+
+		// val is not null
+		if val == core.Null {
+			return core.False
+		}
+		return core.True
 	}
 }
 
