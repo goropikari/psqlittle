@@ -41,7 +41,7 @@ func TestTranslateSelect(t *testing.T) {
 			expected: &trans.QueryStatement{
 				RANode: &trans.ProjectionNode{
 					TargetColNames: core.ColumnNames{
-						core.ColumnName{},
+						core.ColumnName{Name: "*"},
 					},
 					ResTargets: []trans.ExpressionNode{
 						trans.ColWildcardNode{},

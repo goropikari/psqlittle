@@ -247,7 +247,7 @@ func interpreteTargetList(targetList []*pg_query.Node) (core.ColumnNames, []Expr
 		if colRef := val.GetColumnRef(); colRef != nil {
 			if colRef.GetFields()[0].GetAStar() != nil {
 				resExprs = append(resExprs, ColWildcardNode{})
-				names = append(names, core.ColumnName{})
+				names = append(names, core.ColumnName{Name: "*"})
 			} else {
 				colName := getColName(colRef)
 				names = append(names, colName)

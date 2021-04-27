@@ -4,6 +4,7 @@ package translator
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
@@ -76,7 +77,41 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 
 	resFuncs := p.constructResFunc()
 
+	if err := validateTargetColumn(newTable.GetColNames(), p.TargetColNames); err != nil {
+		return nil, err
+	}
+
 	return newTable.Project(p.TargetColNames, resFuncs)
+}
+
+func validateTargetColumn(tbCols core.ColumnNames, targets core.ColumnNames) error {
+	for _, tc := range targets {
+		if (tc == core.ColumnName{Name: "*"}) {
+			continue
+		}
+		if !haveColumn(tc, tbCols) {
+			return fmt.Errorf(`column "%v" does not exist`, makeColName(tc))
+		}
+	}
+
+	return nil
+}
+
+func haveColumn(c core.ColumnName, cs core.ColumnNames) bool {
+	for _, col := range cs {
+		if c == col {
+			return true
+		}
+	}
+
+	return false
+}
+
+func makeColName(c core.ColumnName) string {
+	if c.TableName == "" {
+		return c.Name
+	}
+	return c.TableName + "." + c.Name
 }
 
 func (p *ProjectionNode) constructResFunc() []func(row backend.Row) core.Value {
