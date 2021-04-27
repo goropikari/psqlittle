@@ -25,6 +25,7 @@ type Table interface {
 	InsertValues(core.ColumnNames, core.ValuesList) error
 	UpdateTableName(string)
 	Project(core.ColumnNames, []func(Row) core.Value) (Table, error)
+	Where(func(Row) core.Value) (Table, error)
 	// GetCols() []Col
 	// SetCols([]Col)
 }
@@ -292,26 +293,6 @@ func (t *DBTable) UpdateTableName(name string) {
 }
 
 // Project is method to select columns of table.
-// Deprecated
-// func (t *DBTable) Project(names core.ColumnNames) (DBRows, error) {
-// 	returnRows := make(DBRows, 0, 10)
-// 	idxs, err := t.toIndex(names)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	for _, row := range t.Rows {
-// 		returnRow := &DBRow{}
-// 		for _, i := range idxs {
-// 			returnRow.Values = append(returnRow.Values, row.getByID(i))
-// 		}
-// 		returnRows = append(returnRows, returnRow)
-// 	}
-//
-// 	return returnRows, nil
-// }
-
-// Project is method to select columns of table.
 func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) core.Value) (Table, error) {
 	rows := t.GetRows()
 	newRows := make([]Row, 0, len(rows))
@@ -352,6 +333,20 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 	t.SetColNames(TargetColNames)
 	// TODO: implement SetCols if type validation is implemented
 	// newTable.SetCols(cols)
+
+	return t, nil
+}
+
+func (t *DBTable) Where(condFn func(Row) core.Value) (Table, error) {
+	srcRows := t.Rows
+	rows := make([]Row, 0, len(srcRows))
+	for _, row := range srcRows {
+		if condFn(row) == core.True {
+			rows = append(rows, row)
+		}
+	}
+
+	t.Rows = srcRows
 
 	return t, nil
 }

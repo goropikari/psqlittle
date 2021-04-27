@@ -196,6 +196,21 @@ func (mr *MockTableMockRecorder) UpdateTableName(arg0 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTableName", reflect.TypeOf((*MockTable)(nil).UpdateTableName), arg0)
 }
 
+// Where mocks base method.
+func (m *MockTable) Where(arg0 func(backend.Row) core.Value) (backend.Table, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Where", arg0)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Where indicates an expected call of Where.
+func (mr *MockTableMockRecorder) Where(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Where", reflect.TypeOf((*MockTable)(nil).Where), arg0)
+}
+
 // MockRow is a mock of Row interface.
 type MockRow struct {
 	ctrl     *gomock.Controller

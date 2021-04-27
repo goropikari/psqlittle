@@ -127,15 +127,19 @@ func (t *EmptyTable) GetRows() []backend.Row {
 func (t *EmptyTable) SetRows([]backend.Row)       {}
 func (t *EmptyTable) UpdateTableName(name string) {}
 
-type EmptyTableRow struct {
-	ColNames core.ColumnNames
-	Values   core.Values
-}
-
 func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
 
 func (t *EmptyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Value) (backend.Table, error) {
 	return nil, nil
+}
+
+func (t *EmptyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+type EmptyTableRow struct {
+	ColNames core.ColumnNames
+	Values   core.Values
 }
 
 func (r *EmptyTableRow) GetValueByColName(core.ColumnName) core.Value {
@@ -172,20 +176,9 @@ func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
 	}
 
 	newTable := tb.Copy()
-	srcRows := newTable.GetRows()
 	condFunc := wn.Condition.Eval()
 
-	// FIX ME
-	rows := make([]backend.Row, 0, len(srcRows))
-	for _, row := range srcRows {
-		if condFunc(row) == core.True {
-			rows = append(rows, row)
-		}
-	}
-
-	newTable.SetRows(rows)
-
-	return newTable, nil
+	return newTable.Where(condFunc)
 }
 
 // DropTableNode is a node of drop statement
