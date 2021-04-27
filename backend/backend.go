@@ -35,7 +35,6 @@ type Row interface {
 	GetValueByColName(core.ColumnName) core.Value
 	GetValues() core.Values
 	SetValues(core.Values)
-	SetColNames(core.ColumnNames)
 	UpdateValue(core.ColumnName, core.Value)
 }
 
@@ -125,14 +124,13 @@ func (r *DBRow) SetValues(vals core.Values) {
 }
 
 // SetColNames sets column names into row
-func (r *DBRow) SetColNames(names core.ColumnNames) {
+func (r *DBRow) setColNames(names core.ColumnNames) {
 	r.ColNames = names
 }
 
 // UpdateValue updates value by specifing column name
 func (r *DBRow) UpdateValue(name core.ColumnName, val core.Value) {
 	for k, colName := range r.ColNames {
-		// fmt.Println("colName:", colName, "givenName:", name)
 		if colName == name {
 			r.Values[k] = val
 		}
@@ -295,7 +293,8 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 				}
 				vals = append(vals, v)
 				colNames = append(colNames, TargetColNames[k])
-			} else { // column wildcard
+			} else {
+				// column wildcard
 				// Add values
 				for _, val := range row.GetValues() {
 					if val == nil {
@@ -314,12 +313,17 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 			}
 		}
 		row.SetValues(vals)
-		row.SetColNames(colNames)
+		row.setColNames(colNames)
 		newRows = append(newRows, row)
 	}
 
 	t.Rows = newRows
-	t.SetColNames(TargetColNames)
+
+	tbColNames := make(core.ColumnNames, 0)
+	for _, name := range newRows[0].ColNames {
+		tbColNames = append(tbColNames, name)
+	}
+	t.ColNames = tbColNames
 	// TODO: implement SetCols if type validation is implemented
 	// newTable.SetCols(cols)
 
