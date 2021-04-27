@@ -37,18 +37,18 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		tb, err := raNode.Eval(db)
+		res, err := raNode.Eval(db)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		if tb == nil {
+		if res == nil {
 			continue
 		}
-		rows := tb.GetRows()
+		recs := res.GetRecords()
 
-		for k, row := range rows {
-			fmt.Printf("row %v: %v\n", k, row.GetValues())
+		for k, rec := range recs {
+			fmt.Printf("row %v: %v\n", k, rec)
 		}
 	}
 

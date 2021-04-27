@@ -29,11 +29,13 @@ func (t *TableNode) Eval(db backend.DB) (backend.Table, error) {
 	return tb, err
 }
 
+// RenameTableNode is Node for renaming tabel
 type RenameTableNode struct {
 	Alias string
 	Table RelationalAlgebraNode
 }
 
+// Eval evaluates RenameTableNode
 func (rt *RenameTableNode) Eval(db backend.DB) (backend.Table, error) {
 	if rt.Table == nil {
 		return nil, errors.New("have to include table")
@@ -68,7 +70,7 @@ func (p *ProjectionNode) Eval(db backend.DB) (backend.Table, error) {
 		return nil, err
 	}
 	if tb == nil {
-		return p.evalEmptyTable()
+		return p.makeEmptyTable()
 	}
 	newTable := tb.Copy()
 
@@ -86,7 +88,7 @@ func (p *ProjectionNode) constructResFunc() []func(row backend.Row) core.Value {
 	return resFuncs
 }
 
-func (p *ProjectionNode) evalEmptyTable() (backend.Table, error) {
+func (p *ProjectionNode) makeEmptyTable() (backend.Table, error) {
 	resFuncs := p.constructResFunc()
 	row := &EmptyTableRow{
 		ColNames: p.TargetColNames,
@@ -124,7 +126,6 @@ func (t *EmptyTable) GetRows() []backend.Row {
 	return rows
 }
 
-func (t *EmptyTable) SetRows([]backend.Row)       {}
 func (t *EmptyTable) UpdateTableName(name string) {}
 
 func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
@@ -134,6 +135,14 @@ func (t *EmptyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.V
 }
 
 func (t *EmptyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+func (t *EmptyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) core.Value, assignValFns []func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+func (t *EmptyTable) Delete(func(backend.Row) core.Value) (backend.Table, error) {
 	return nil, nil
 }
 
@@ -253,18 +262,12 @@ func (u *UpdateNode) Eval(db backend.DB) (backend.Table, error) {
 		return nil, err
 	}
 
-	oldRows := tb.GetRows()
-	updatedRows := make([]backend.Row, 0, len(oldRows))
-	for _, row := range oldRows {
-		if condFunc(row) == core.True {
-			for k, name := range u.ColNames {
-				row.UpdateValue(name, u.AssignExpr[k].Eval()(row))
-			}
-		}
-		updatedRows = append(updatedRows, row)
+	assignValFns := make([]func(backend.Row) core.Value, 0)
+	for _, expr := range u.AssignExpr {
+		assignValFns = append(assignValFns, expr.Eval())
 	}
 
-	tb.SetRows(updatedRows)
+	tb.Update(u.ColNames, condFunc, assignValFns)
 
 	return nil, nil
 }
@@ -291,17 +294,5 @@ func (d *DeleteNode) Eval(db backend.DB) (backend.Table, error) {
 		return nil, err
 	}
 
-	oldRows := tb.GetRows()
-	updatedRows := make([]backend.Row, 0)
-	for _, row := range oldRows {
-		if condFunc(row) == core.True {
-			continue
-		} else {
-			updatedRows = append(updatedRows, row)
-		}
-	}
-
-	tb.SetRows(updatedRows)
-
-	return nil, nil
+	return tb.Delete(condFunc)
 }

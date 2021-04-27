@@ -115,6 +115,21 @@ func (mr *MockTableMockRecorder) Copy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Copy", reflect.TypeOf((*MockTable)(nil).Copy))
 }
 
+// Delete mocks base method.
+func (m *MockTable) Delete(arg0 func(backend.Row) core.Value) (backend.Table, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", arg0)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockTableMockRecorder) Delete(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockTable)(nil).Delete), arg0)
+}
+
 // GetColNames mocks base method.
 func (m *MockTable) GetColNames() core.ColumnNames {
 	m.ctrl.T.Helper()
@@ -172,16 +187,19 @@ func (mr *MockTableMockRecorder) Project(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Project", reflect.TypeOf((*MockTable)(nil).Project), arg0, arg1)
 }
 
-// SetRows mocks base method.
-func (m *MockTable) SetRows(arg0 []backend.Row) {
+// Update mocks base method.
+func (m *MockTable) Update(arg0 core.ColumnNames, arg1 func(backend.Row) core.Value, arg2 []func(backend.Row) core.Value) (backend.Table, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetRows", arg0)
+	ret := m.ctrl.Call(m, "Update", arg0, arg1, arg2)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// SetRows indicates an expected call of SetRows.
-func (mr *MockTableMockRecorder) SetRows(arg0 interface{}) *gomock.Call {
+// Update indicates an expected call of Update.
+func (mr *MockTableMockRecorder) Update(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRows", reflect.TypeOf((*MockTable)(nil).SetRows), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockTable)(nil).Update), arg0, arg1, arg2)
 }
 
 // UpdateTableName mocks base method.

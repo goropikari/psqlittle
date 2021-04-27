@@ -21,13 +21,12 @@ type Table interface {
 	Copy() Table
 	GetColNames() core.ColumnNames
 	GetRows() []Row
-	SetRows([]Row)
 	InsertValues(core.ColumnNames, core.ValuesList) error
 	UpdateTableName(string)
 	Project(core.ColumnNames, []func(Row) core.Value) (Table, error)
 	Where(func(Row) core.Value) (Table, error)
-	// GetCols() []Col
-	// SetCols([]Col)
+	Update(core.ColumnNames, func(Row) core.Value, []func(Row) core.Value) (Table, error)
+	Delete(func(Row) core.Value) (Table, error)
 }
 
 // Row is interface of row of table.
@@ -221,16 +220,6 @@ func (t *DBTable) GetRows() []Row {
 	return rows
 }
 
-// SetRows replate rows
-func (t *DBTable) SetRows(rows []Row) {
-	dbRows := make([]*DBRow, 0, len(rows))
-	for _, row := range rows {
-		dbRows = append(dbRows, row.(*DBRow))
-	}
-
-	t.Rows = dbRows
-}
-
 // InsertValues inserts values into the table
 func (t *DBTable) InsertValues(names core.ColumnNames, valsList core.ValuesList) error {
 	if len(names) == 0 {
@@ -295,8 +284,8 @@ func (t *DBTable) UpdateTableName(name string) {
 // Project is method to select columns of table.
 func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) core.Value) (Table, error) {
 	rows := t.GetRows()
-	newRows := make([]Row, 0, len(rows))
-	for _, row := range rows {
+	newRows := make(DBRows, 0, len(rows))
+	for _, row := range t.Rows {
 		colNames := make(core.ColumnNames, 0)
 		vals := make(core.Values, 0)
 		for k, fn := range resFuncs {
@@ -329,7 +318,7 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 		newRows = append(newRows, row)
 	}
 
-	t.SetRows(newRows)
+	t.Rows = newRows
 	t.SetColNames(TargetColNames)
 	// TODO: implement SetCols if type validation is implemented
 	// newTable.SetCols(cols)
@@ -337,6 +326,7 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 	return t, nil
 }
 
+// Where filters rows by given where conditions
 func (t *DBTable) Where(condFn func(Row) core.Value) (Table, error) {
 	srcRows := t.Rows
 	rows := make([]Row, 0, len(srcRows))
@@ -349,6 +339,33 @@ func (t *DBTable) Where(condFn func(Row) core.Value) (Table, error) {
 	t.Rows = srcRows
 
 	return t, nil
+}
+
+func (t *DBTable) Update(colNames core.ColumnNames, condFn func(Row) core.Value, assignValFns []func(Row) core.Value) (Table, error) {
+	rows := t.Rows
+	for _, row := range rows {
+		if condFn(row) == core.True {
+			for k, name := range colNames {
+				row.UpdateValue(name, assignValFns[k](row))
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+func (t *DBTable) Delete(condFn func(Row) core.Value) (Table, error) {
+	updatedRows := make([]*DBRow, 0)
+	for _, row := range t.Rows {
+		if condFn(row) == core.True {
+			continue
+		} else {
+			updatedRows = append(updatedRows, row)
+		}
+	}
+
+	t.Rows = updatedRows
+	return nil, nil
 }
 
 func (t *DBTable) toIndex(names core.ColumnNames) ([]ColumnID, error) {

@@ -642,10 +642,6 @@ func (s *SpyTable) GetRows() []backend.Row {
 	return s.Table.GetRows()
 }
 
-func (s *SpyTable) SetRows(rows []backend.Row) {
-	*s.ResultCount = len(rows)
-}
-
 func (s *SpyTable) GetColNames() core.ColumnNames {
 	return s.Table.GetColNames()
 }
@@ -661,6 +657,14 @@ func (s *SpyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Val
 }
 
 func (s *SpyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+func (t *SpyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) core.Value, assignValFns []func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+func (s *SpyTable) Delete(fn func(backend.Row) core.Value) (backend.Table, error) {
 	return nil, nil
 }
 

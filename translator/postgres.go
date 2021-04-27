@@ -10,6 +10,81 @@ import (
 	pg_query "github.com/pganalyze/pg_query_go/v2"
 )
 
+// Result is interface of query result
+type Result interface {
+	GetRecords() core.ValuesList
+	GetColumns() []string
+}
+
+// QueryResult is result of query
+type QueryResult struct {
+	Columns []string
+	Records core.ValuesList
+}
+
+// GetRecords gets records from query result
+func (qr *QueryResult) GetRecords() core.ValuesList {
+	return qr.Records
+}
+
+// GetColumns gets column name of records
+func (qr *QueryResult) GetColumns() []string {
+	return qr.Columns
+}
+
+// Statement is interface of query statement
+type Statement interface {
+	Eval(backend.DB) (Result, error)
+}
+
+// QueryStatement is statement of query
+type QueryStatement struct {
+	RANode RelationalAlgebraNode
+}
+
+// Eval evaluates QueryStatement
+func (qs *QueryStatement) Eval(db backend.DB) (Result, error) {
+	tb, err := qs.RANode.Eval(db)
+	if err != nil {
+		return nil, err
+	}
+
+	if tb == nil {
+		return &QueryResult{}, nil
+	}
+
+	rows := tb.GetRows()
+	cols := tb.GetColNames()
+
+	recs := make(core.ValuesList, 0)
+	names := make([]string, 0)
+
+	for _, row := range rows {
+		rec := make(core.Values, 0)
+		for _, val := range row.GetValues() {
+			switch val {
+			case core.True:
+				rec = append(rec, true)
+			case core.False:
+				rec = append(rec, false)
+			case core.Null:
+				rec = append(rec, nil)
+			default:
+				rec = append(rec, val)
+			}
+		}
+		recs = append(recs, rec)
+	}
+	for _, col := range cols {
+		names = append(names, col.Name)
+	}
+
+	return &QueryResult{
+		Columns: names,
+		Records: recs,
+	}, nil
+}
+
 // Translator is an interface for translator of SQL parse
 type Translator interface {
 	Translate() RelationalAlgebraNode
@@ -17,43 +92,51 @@ type Translator interface {
 
 // PGTranlator is translator for PostgreSQL syntax
 type PGTranlator struct {
-	Query string
+	query string
 }
 
 // NewPGTranslator is a constructor of PGTranlator
 func NewPGTranslator(query string) *PGTranlator {
 	return &PGTranlator{
-		Query: query,
+		query: query,
 	}
 }
 
 // Translate translates a postgres parse tree into RelationalAlgebraNode
-func (pg *PGTranlator) Translate() (RelationalAlgebraNode, error) {
-	result, err := pg_query.Parse(pg.Query)
+func (pg *PGTranlator) Translate() (Statement, error) {
+	result, err := pg_query.Parse(pg.query)
 	if err != nil {
 		return nil, err
 	}
 
+	var ra RelationalAlgebraNode
 	stmt := result.Stmts[0].Stmt
 	if node := stmt.GetSelectStmt(); node != nil {
-		return pg.TranslateSelect(node)
+		ra, err = pg.TranslateSelect(node)
 	}
 	if node := stmt.GetCreateStmt(); node != nil {
-		return pg.TranslateCreateTable(node)
+		ra, err = pg.TranslateCreateTable(node)
 	}
 	if node := stmt.GetDropStmt(); node != nil {
-		return pg.TranslateDropTable(node)
+		ra, err = pg.TranslateDropTable(node)
 	}
 	if node := stmt.GetInsertStmt(); node != nil {
-		return pg.TranslateInsert(node)
+		ra, err = pg.TranslateInsert(node)
 	}
 	if node := stmt.GetUpdateStmt(); node != nil {
-		return pg.TranslateUpdate(node)
+		ra, err = pg.TranslateUpdate(node)
 	}
 	if node := stmt.GetDeleteStmt(); node != nil {
-		return pg.TranslateDelete(node)
+		ra, err = pg.TranslateDelete(node)
 	}
-	return nil, errors.New("Not support such query")
+
+	if ra != nil {
+		return &QueryStatement{
+			RANode: ra,
+		}, nil
+	}
+
+	return nil, errors.New("Don't support such query")
 }
 
 // TranslateDropTable translates sql parse tree into DropTableNode
@@ -171,8 +254,8 @@ func interpreteTargetList(targetList []*pg_query.Node) (core.ColumnNames, []Expr
 				resExprs = append(resExprs, ColRefNode{ColName: colName})
 			}
 		} else {
-			// This column is not included in given table.
 			// The column is an expression.
+			// This column is not included in given table.
 			names = append(names, core.ColumnName{})
 			resExprs = append(resExprs, constructExprNode(val))
 		}
