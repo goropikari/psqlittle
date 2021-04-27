@@ -329,18 +329,18 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 // Where filters rows by given where conditions
 func (t *DBTable) Where(condFn func(Row) core.Value) (Table, error) {
 	srcRows := t.Rows
-	rows := make([]Row, 0, len(srcRows))
+	rows := make([]*DBRow, 0)
 	for _, row := range srcRows {
 		if condFn(row) == core.True {
 			rows = append(rows, row)
 		}
 	}
-
-	t.Rows = srcRows
+	t.Rows = rows
 
 	return t, nil
 }
 
+// Update updates records
 func (t *DBTable) Update(colNames core.ColumnNames, condFn func(Row) core.Value, assignValFns []func(Row) core.Value) (Table, error) {
 	rows := t.Rows
 	for _, row := range rows {
