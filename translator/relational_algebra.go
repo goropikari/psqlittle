@@ -198,7 +198,6 @@ func (r *EmptyTableRow) GetValues() core.Values {
 	return r.Values
 }
 
-func (r *EmptyTableRow) SetValues(vals core.Values)                       {}
 func (r *EmptyTableRow) SetColNames(names core.ColumnNames)               {}
 func (r *EmptyTableRow) UpdateValue(name core.ColumnName, val core.Value) {}
 

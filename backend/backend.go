@@ -34,7 +34,6 @@ type Row interface {
 	// GetValueByColName is used in ColRefNode when getting value
 	GetValueByColName(core.ColumnName) core.Value
 	GetValues() core.Values
-	SetValues(core.Values)
 	UpdateValue(core.ColumnName, core.Value)
 }
 
@@ -116,16 +115,6 @@ func (r *DBRow) GetValueByColName(name core.ColumnName) core.Value {
 // GetValues gets values from DBRow
 func (r *DBRow) GetValues() core.Values {
 	return r.Values
-}
-
-// SetValues sets vals into row
-func (r *DBRow) SetValues(vals core.Values) {
-	r.Values = vals
-}
-
-// SetColNames sets column names into row
-func (r *DBRow) setColNames(names core.ColumnNames) {
-	r.ColNames = names
 }
 
 // UpdateValue updates value by specifing column name
@@ -312,8 +301,8 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 				}
 			}
 		}
-		row.SetValues(vals)
-		row.setColNames(colNames)
+		row.Values = vals
+		row.ColNames = colNames
 		newRows = append(newRows, row)
 	}
 

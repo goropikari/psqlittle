@@ -682,10 +682,6 @@ func (r *SpyRow) GetValues() core.Values {
 	return r.MockRow.GetValues()
 }
 
-func (r *SpyRow) SetValues(values core.Values) {
-	r.Values = values
-}
-
 func (r *SpyRow) SetColNames(names core.ColumnNames) {
 	r.ColNames = names
 }
