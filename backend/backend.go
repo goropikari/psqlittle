@@ -298,7 +298,7 @@ func (t *DBTable) RenameTableName(name string) {
 func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) (core.Value, error)) (Table, error) {
 	rows := t.GetRows()
 	if len(rows) == 0 {
-		return nil, nil
+		return t, nil
 	}
 	newRows := make(DBRows, 0, len(rows))
 	for _, row := range t.Rows {
