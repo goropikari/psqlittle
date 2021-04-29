@@ -1,9 +1,10 @@
 FROM golang:1.16
 
+ENV DBMS_HOST 0.0.0.0
 WORKDIR /app
 COPY . /app/
 
 RUN go mod tidy
-RUN make && cp ./bin/repl /usr/bin/repl && rm -rf /app
+RUN make && cp ./bin/* /usr/bin/ && rm -rf /app
 
-CMD /usr/bin/repl
+CMD /usr/bin/server

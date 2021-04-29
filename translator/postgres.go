@@ -112,6 +112,10 @@ func (pg *PGTranlator) Translate() (Statement, error) {
 	}
 
 	var ra RelationalAlgebraNode
+	if len(result.Stmts) == 0 {
+		fmt.Println(result.Stmts)
+		fmt.Println("query =", pg.query)
+	}
 	stmt := result.Stmts[0].Stmt
 	if node := stmt.GetSelectStmt(); node != nil {
 		ra, err = pg.TranslateSelect(node)
@@ -138,7 +142,7 @@ func (pg *PGTranlator) Translate() (Statement, error) {
 		}, nil
 	}
 
-	return nil, errors.New("Don't support such query")
+	return nil, fmt.Errorf("Don't support such query: %v\n", pg.query)
 }
 
 // TranslateDropTable translates sql parse tree into DropTableNode

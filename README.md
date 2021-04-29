@@ -1,4 +1,7 @@
 ```
 docker build -t dbms .
-docker run -it dbms
+docker run dbms  # server mode
+                 # connect using psql
+
+docker run -it dbms repl
 ```
