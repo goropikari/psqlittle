@@ -77,6 +77,30 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			name:  "cross join",
+			query: "select * from hoge, piyo",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "cid", "name", "id", "name"},
+				Records: core.ValuesList{
+					{123, 1000, "taro", 321, "mike1"},
+					{456, 500, "hanako", 321, "mike1"},
+					{789, nil, "mike", 321, "mike1"},
+				},
+			},
+		},
+		{
+			name:  "cross join: select column",
+			query: "select h.id, piyo.name from hoge as h, piyo",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "name"},
+				Records: core.ValuesList{
+					{123, "mike1"},
+					{456, "mike1"},
+					{789, "mike1"},
+				},
+			},
+		},
+		{
 			name:  "complex condition",
 			query: "select hoge.name from hoge where hoge.id > 123 and hoge.cid < 1000 or hoge.name = 'hanako'",
 			expected: &trans.QueryResult{
@@ -222,10 +246,18 @@ func prepareDB() backend.DB {
 	if _, err := raNode.Eval(db); err != nil {
 		fmt.Println("error:", err)
 	}
-
 	query = "insert into hoge (name, cid, id) values ('taro', 1000, 123), ('hanako', 500, 456), ('mike', null, 789)"
 	raNode, _ = trans.NewPGTranslator(query).Translate()
 	raNode.Eval(db)
 
+	query = "create table piyo (id int, name varchar(255))"
+	raNode, _ = trans.NewPGTranslator(query).Translate()
+	raNode.Eval(db)
+	if _, err := raNode.Eval(db); err != nil {
+		fmt.Println("error:", err)
+	}
+	query = "insert into piyo (id, name) values (321, 'mike1')"
+	raNode, _ = trans.NewPGTranslator(query).Translate()
+	raNode.Eval(db)
 	return db
 }

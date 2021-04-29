@@ -28,8 +28,12 @@ func TestTranslateSelect(t *testing.T) {
 					},
 					RANode: &trans.WhereNode{
 						Condition: nil,
-						Table: &trans.TableNode{
-							TableName: "foo",
+						Table: &trans.CrossJoinNode{
+							RANodes: []trans.RelationalAlgebraNode{
+								&trans.TableNode{
+									TableName: "foo",
+								},
+							},
 						},
 					},
 				},
@@ -48,8 +52,12 @@ func TestTranslateSelect(t *testing.T) {
 					},
 					RANode: &trans.WhereNode{
 						Condition: nil,
-						Table: &trans.TableNode{
-							TableName: "foo",
+						Table: &trans.CrossJoinNode{
+							RANodes: []trans.RelationalAlgebraNode{
+								&trans.TableNode{
+									TableName: "foo",
+								},
+							},
 						},
 					},
 				},

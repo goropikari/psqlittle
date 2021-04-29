@@ -153,6 +153,10 @@ func (t *EmptyTable) Copy() backend.Table {
 	return t
 }
 
+func (t *EmptyTable) GetName() string {
+	return ""
+}
+
 func (t *EmptyTable) GetColNames() core.ColumnNames {
 	return t.ColNames
 }
@@ -165,6 +169,10 @@ func (t *EmptyTable) GetRows() []backend.Row {
 	return rows
 }
 
+func (t *EmptyTable) GetCols() core.Cols {
+	return nil
+}
+
 func (t *EmptyTable) UpdateTableName(name string) {}
 
 func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
@@ -174,6 +182,10 @@ func (t *EmptyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.V
 }
 
 func (t *EmptyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+func (t *EmptyTable) CrossJoin(backend.Table) (backend.Table, error) {
 	return nil, nil
 }
 
@@ -198,7 +210,10 @@ func (r *EmptyTableRow) GetValues() core.Values {
 	return r.Values
 }
 
-func (r *EmptyTableRow) SetColNames(names core.ColumnNames)               {}
+func (r *EmptyTableRow) GetColNames() core.ColumnNames {
+	return nil
+}
+
 func (r *EmptyTableRow) UpdateValue(name core.ColumnName, val core.Value) {}
 
 // WhereNode is Node of where clause
@@ -226,6 +241,78 @@ func (wn *WhereNode) Eval(db backend.DB) (backend.Table, error) {
 	condFunc := wn.Condition.Eval()
 
 	return newTable.Where(condFunc)
+}
+
+// CrossJoinNode is a node of cross join.
+type CrossJoinNode struct {
+	RANodes []RelationalAlgebraNode
+}
+
+// Eval evaluates CrossJoinNode
+func (c *CrossJoinNode) Eval(db backend.DB) (backend.Table, error) {
+	tbs := make([]backend.Table, 0, len(c.RANodes))
+
+	for _, ra := range c.RANodes {
+		tb, err := ra.Eval(db)
+		if err != nil {
+			return nil, err
+		}
+		tbs = append(tbs, tb)
+	}
+
+	if err := validateTableName(tbs); err != nil {
+		return nil, err
+	}
+
+	switch len(tbs) {
+	case 0: // when table not specified. Only select expression case.
+		return nil, nil
+	case 1:
+		return tbs[0], nil
+	}
+
+	var tb backend.Table
+	var err error
+	tb = tbs[0]
+	for k, t := range tbs {
+		if k == 0 {
+			continue
+		}
+		tb, err = crossJoinTable(tb, t)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tb, nil
+}
+
+func validateTableName(tbs []backend.Table) error {
+
+	nm := make(map[string]int)
+	for _, tb := range tbs {
+		if name := tb.GetName(); name != "" {
+			if _, ok := nm[name]; ok {
+				return fmt.Errorf(`ERROR:  table name "%v" specified more than once`, name)
+			}
+			nm[name]++
+		}
+	}
+
+	return nil
+}
+
+func crossJoinTable(tb1, tb2 backend.Table) (backend.Table, error) {
+	if tb1 == nil || tb2 == nil {
+		return nil, nil
+	}
+
+	tb, err := tb1.CrossJoin(tb2)
+	if err != nil {
+		return nil, err
+	}
+
+	return tb, nil
 }
 
 // DropTableNode is a node of drop statement

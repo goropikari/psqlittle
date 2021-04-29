@@ -215,16 +215,16 @@ func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {
 		}
 	}
 
-	table := crossJoin(tables)
+	table := crossJoinRA(tables)
 
 	return table
 }
 
-func crossJoin(tables []RelationalAlgebraNode) RelationalAlgebraNode {
-	if len(tables) == 0 {
-		return nil
+func crossJoinRA(ras []RelationalAlgebraNode) RelationalAlgebraNode {
+
+	return &CrossJoinNode{
+		RANodes: ras,
 	}
-	return tables[0]
 }
 
 func constructWhereNode(whereTree *pg_query.Node, table RelationalAlgebraNode) RelationalAlgebraNode {

@@ -638,12 +638,20 @@ func (s *SpyTable) Copy() backend.Table {
 	return s
 }
 
+func (s *SpyTable) GetName() string {
+	return ""
+}
+
 func (s *SpyTable) GetRows() []backend.Row {
 	return s.Table.GetRows()
 }
 
 func (s *SpyTable) GetColNames() core.ColumnNames {
 	return s.Table.GetColNames()
+}
+
+func (s *SpyTable) GetCols() core.Cols {
+	return nil
 }
 
 func (s *SpyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error {
@@ -657,6 +665,10 @@ func (s *SpyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Val
 }
 
 func (s *SpyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+	return nil, nil
+}
+
+func (s *SpyTable) CrossJoin(backend.Table) (backend.Table, error) {
 	return nil, nil
 }
 

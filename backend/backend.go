@@ -19,12 +19,15 @@ type DB interface {
 // Table is interface of table.
 type Table interface {
 	Copy() Table
+	GetName() string
 	GetColNames() core.ColumnNames
 	GetRows() []Row
+	GetCols() core.Cols
 	InsertValues(core.ColumnNames, core.ValuesList) error
 	UpdateTableName(string)
 	Project(core.ColumnNames, []func(Row) core.Value) (Table, error)
 	Where(func(Row) core.Value) (Table, error)
+	CrossJoin(Table) (Table, error)
 	Update(core.ColumnNames, func(Row) core.Value, []func(Row) core.Value) (Table, error)
 	Delete(func(Row) core.Value) (Table, error)
 }
@@ -34,6 +37,7 @@ type Row interface {
 	// GetValueByColName is used in ColRefNode when getting value
 	GetValueByColName(core.ColumnName) core.Value
 	GetValues() core.Values
+	GetColNames() core.ColumnNames
 	UpdateValue(core.ColumnName, core.Value)
 }
 
@@ -61,6 +65,7 @@ func (db *Database) CreateTable(tableName string, cols core.Cols) error {
 	}
 
 	db.Tables[tableName] = &DBTable{
+		Name:     tableName,
 		ColNames: colNames,
 		Cols:     cols,
 		Rows:     make(DBRows, 0),
@@ -117,6 +122,11 @@ func (r *DBRow) GetValues() core.Values {
 	return r.Values
 }
 
+// GetColNames gets column names from DBRow
+func (r *DBRow) GetColNames() core.ColumnNames {
+	return r.ColNames
+}
+
 // UpdateValue updates value by specifing column name
 func (r *DBRow) UpdateValue(name core.ColumnName, val core.Value) {
 	for k, colName := range r.ColNames {
@@ -171,6 +181,7 @@ func (c ColNameIndexes) Copy() ColNameIndexes {
 
 // DBTable is struct for DBTable
 type DBTable struct {
+	Name     string
 	ColNames core.ColumnNames
 	Cols     core.Cols
 	Rows     DBRows
@@ -186,9 +197,19 @@ func (t *DBTable) Copy() Table {
 	return tb
 }
 
+// GetName return table name
+func (t *DBTable) GetName() string {
+	return t.Name
+}
+
 // GetColNames return column names of table
 func (t *DBTable) GetColNames() core.ColumnNames {
 	return t.ColNames
+}
+
+// GetCols return column names of table
+func (t *DBTable) GetCols() core.Cols {
+	return t.Cols
 }
 
 // SetColNames sets ColNames in Table
@@ -254,6 +275,8 @@ func (t *DBTable) validateInsert(names core.ColumnNames, valuesList core.ValuesL
 
 // UpdateTableName updates table name
 func (t *DBTable) UpdateTableName(name string) {
+	t.Name = name
+
 	for i := 0; i < len(t.ColNames); i++ {
 		t.ColNames[i].TableName = name
 	}
@@ -331,6 +354,74 @@ func (t *DBTable) Where(condFn func(Row) core.Value) (Table, error) {
 	t.Rows = rows
 
 	return t, nil
+}
+
+// CrossJoin took cross join given tables
+func (t *DBTable) CrossJoin(rtb Table) (Table, error) {
+	ns := uniteColNames(t.GetColNames(), rtb.GetColNames())
+	cols := uniteCols(t.GetCols(), rtb.GetCols())
+
+	rows := make([]*DBRow, 0)
+	rs1 := t.GetRows()
+	rs2 := rtb.GetRows()
+	for _, r1 := range rs1 {
+		for _, r2 := range rs2 {
+			rows = append(rows, uniteRow(r1, r2).(*DBRow))
+		}
+	}
+
+	return &DBTable{
+		ColNames: ns,
+		Cols:     cols,
+		Rows:     rows,
+	}, nil
+}
+
+func uniteRow(r1, r2 Row) Row {
+	vals := make(core.Values, 0)
+	for _, v := range r1.GetValues() {
+		vals = append(vals, v)
+	}
+	for _, v := range r2.GetValues() {
+		vals = append(vals, v)
+	}
+
+	cols := make(core.ColumnNames, 0)
+	for _, c := range r1.GetColNames() {
+		cols = append(cols, c)
+	}
+	for _, c := range r2.GetColNames() {
+		cols = append(cols, c)
+	}
+
+	return &DBRow{
+		ColNames: cols,
+		Values:   vals,
+	}
+}
+
+func uniteColNames(lcs, rcs core.ColumnNames) core.ColumnNames {
+	ns := make(core.ColumnNames, 0)
+	for _, c := range lcs {
+		ns = append(ns, c)
+	}
+	for _, c := range rcs {
+		ns = append(ns, c)
+	}
+
+	return ns
+}
+
+func uniteCols(l, r core.Cols) core.Cols {
+	cs := make(core.Cols, 0)
+	for _, c := range l {
+		cs = append(cs, c)
+	}
+	for _, c := range l {
+		cs = append(cs, c)
+	}
+
+	return cs
 }
 
 // Update updates records

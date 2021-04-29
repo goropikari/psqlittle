@@ -115,6 +115,21 @@ func (mr *MockTableMockRecorder) Copy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Copy", reflect.TypeOf((*MockTable)(nil).Copy))
 }
 
+// CrossJoin mocks base method.
+func (m *MockTable) CrossJoin(arg0 backend.Table) (backend.Table, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CrossJoin", arg0)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CrossJoin indicates an expected call of CrossJoin.
+func (mr *MockTableMockRecorder) CrossJoin(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CrossJoin", reflect.TypeOf((*MockTable)(nil).CrossJoin), arg0)
+}
+
 // Delete mocks base method.
 func (m *MockTable) Delete(arg0 func(backend.Row) core.Value) (backend.Table, error) {
 	m.ctrl.T.Helper()
@@ -142,6 +157,34 @@ func (m *MockTable) GetColNames() core.ColumnNames {
 func (mr *MockTableMockRecorder) GetColNames() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColNames", reflect.TypeOf((*MockTable)(nil).GetColNames))
+}
+
+// GetCols mocks base method.
+func (m *MockTable) GetCols() core.Cols {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCols")
+	ret0, _ := ret[0].(core.Cols)
+	return ret0
+}
+
+// GetCols indicates an expected call of GetCols.
+func (mr *MockTableMockRecorder) GetCols() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCols", reflect.TypeOf((*MockTable)(nil).GetCols))
+}
+
+// GetName mocks base method.
+func (m *MockTable) GetName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetName indicates an expected call of GetName.
+func (mr *MockTableMockRecorder) GetName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockTable)(nil).GetName))
 }
 
 // GetRows mocks base method.
@@ -250,6 +293,20 @@ func NewMockRow(ctrl *gomock.Controller) *MockRow {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRow) EXPECT() *MockRowMockRecorder {
 	return m.recorder
+}
+
+// GetColNames mocks base method.
+func (m *MockRow) GetColNames() core.ColumnNames {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetColNames")
+	ret0, _ := ret[0].(core.ColumnNames)
+	return ret0
+}
+
+// GetColNames indicates an expected call of GetColNames.
+func (mr *MockRowMockRecorder) GetColNames() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetColNames", reflect.TypeOf((*MockRow)(nil).GetColNames))
 }
 
 // GetValueByColName mocks base method.

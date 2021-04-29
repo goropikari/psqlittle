@@ -76,6 +76,7 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			wantedTable: &DBTable{
+				Name: "hoge",
 				ColNames: core.ColumnNames{
 					{TableName: "hoge", Name: "id"},
 					{TableName: "hoge", Name: "name"},
