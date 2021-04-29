@@ -261,6 +261,80 @@ func TestSelectQuery(t *testing.T) {
 	}
 }
 
+func TestUpdateQuery(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		updateQuery string
+		selectQuery string
+		expected    trans.Result
+	}{
+		{
+			name:        "update",
+			updateQuery: "update hoge set hoge.name = 'taro jr' where hoge.name = 'taro'",
+			selectQuery: "select * from hoge",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "cid", "name"},
+				Records: core.ValuesList{
+					{123, 1000, "taro jr"},
+					{456, 500, "hanako"},
+					{789, nil, "mike"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			db := prepareDB()
+			raNode, _ := trans.NewPGTranslator(tt.updateQuery).Translate()
+			actual, _ := raNode.Eval(db)
+			raNode, _ = trans.NewPGTranslator(tt.selectQuery).Translate()
+			actual, _ = raNode.Eval(db)
+
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestDeleteQuery(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		deleteQuery string
+		selectQuery string
+		expected    trans.Result
+	}{
+		{
+			name:        "update",
+			deleteQuery: "delete from hoge where hoge.name = 'taro'",
+			selectQuery: "select * from hoge",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "cid", "name"},
+				Records: core.ValuesList{
+					{456, 500, "hanako"},
+					{789, nil, "mike"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			db := prepareDB()
+			raNode, _ := trans.NewPGTranslator(tt.deleteQuery).Translate()
+			actual, _ := raNode.Eval(db)
+			raNode, _ = trans.NewPGTranslator(tt.selectQuery).Translate()
+			actual, _ = raNode.Eval(db)
+
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
 func prepareDB() backend.DB {
 	db := backend.NewDatabase()
 

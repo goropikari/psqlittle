@@ -36,10 +36,10 @@ func (m *MockExpressionNode) EXPECT() *MockExpressionNodeMockRecorder {
 }
 
 // Eval mocks base method.
-func (m *MockExpressionNode) Eval() func(backend.Row) core.Value {
+func (m *MockExpressionNode) Eval() func(backend.Row) (core.Value, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Eval")
-	ret0, _ := ret[0].(func(backend.Row) core.Value)
+	ret0, _ := ret[0].(func(backend.Row) (core.Value, error))
 	return ret0
 }
 

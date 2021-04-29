@@ -34,6 +34,13 @@ type ColumnName struct {
 	Name      string
 }
 
+func (cn ColumnName) String() string {
+	if cn.TableName == "" {
+		return cn.Name
+	}
+	return cn.TableName + "." + cn.Name
+}
+
 // Copy copies ColumnName
 func (cn ColumnName) Copy() ColumnName {
 	return ColumnName{

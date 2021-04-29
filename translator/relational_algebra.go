@@ -118,8 +118,8 @@ func makeColName(c core.ColumnName) string {
 	return c.TableName + "." + c.Name
 }
 
-func (p *ProjectionNode) constructResFunc() []func(row backend.Row) core.Value {
-	resFuncs := make([]func(backend.Row) core.Value, 0, len(p.ResTargets))
+func (p *ProjectionNode) constructResFunc() []func(row backend.Row) (core.Value, error) {
+	resFuncs := make([]func(backend.Row) (core.Value, error), 0, len(p.ResTargets))
 	for _, target := range p.ResTargets {
 		resFuncs = append(resFuncs, target.Eval())
 	}
@@ -135,7 +135,11 @@ func (p *ProjectionNode) makeEmptyTable() (backend.Table, error) {
 	}
 
 	for _, fn := range resFuncs {
-		row.Values = append(row.Values, fn(row))
+		v, err := fn(row)
+		if err != nil {
+			return nil, err
+		}
+		row.Values = append(row.Values, v)
 	}
 
 	return &EmptyTable{
@@ -177,11 +181,11 @@ func (t *EmptyTable) RenameTableName(name string) {}
 
 func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
 
-func (t *EmptyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Value) (backend.Table, error) {
+func (t *EmptyTable) Project(cs core.ColumnNames, fns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
-func (t *EmptyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+func (t *EmptyTable) Where(fn func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
@@ -189,11 +193,11 @@ func (t *EmptyTable) CrossJoin(backend.Table) (backend.Table, error) {
 	return nil, nil
 }
 
-func (t *EmptyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) core.Value, assignValFns []func(backend.Row) core.Value) (backend.Table, error) {
+func (t *EmptyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) (core.Value, error), assignValFns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
-func (t *EmptyTable) Delete(func(backend.Row) core.Value) (backend.Table, error) {
+func (t *EmptyTable) Delete(func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
@@ -202,8 +206,8 @@ type EmptyTableRow struct {
 	Values   core.Values
 }
 
-func (r *EmptyTableRow) GetValueByColName(core.ColumnName) core.Value {
-	return nil
+func (r *EmptyTableRow) GetValueByColName(core.ColumnName) (core.Value, error) {
+	return nil, nil
 }
 
 func (r *EmptyTableRow) GetValues() core.Values {
@@ -373,10 +377,10 @@ type UpdateNode struct {
 
 // Eval evaluates UpdateNode
 func (u *UpdateNode) Eval(db backend.DB) (backend.Table, error) {
-	var condFunc func(backend.Row) core.Value
+	var condFunc func(backend.Row) (core.Value, error)
 	if u.Condition == nil {
-		condFunc = func(row backend.Row) core.Value {
-			return core.True
+		condFunc = func(row backend.Row) (core.Value, error) {
+			return core.True, nil
 		}
 	} else {
 		condFunc = u.Condition.Eval()
@@ -387,7 +391,7 @@ func (u *UpdateNode) Eval(db backend.DB) (backend.Table, error) {
 		return nil, err
 	}
 
-	assignValFns := make([]func(backend.Row) core.Value, 0)
+	assignValFns := make([]func(backend.Row) (core.Value, error), 0)
 	for _, expr := range u.AssignExpr {
 		assignValFns = append(assignValFns, expr.Eval())
 	}
@@ -405,10 +409,10 @@ type DeleteNode struct {
 
 // Eval evaluates DeleteNode
 func (d *DeleteNode) Eval(db backend.DB) (backend.Table, error) {
-	var condFunc func(backend.Row) core.Value
+	var condFunc func(backend.Row) (core.Value, error)
 	if d.Condition == nil {
-		condFunc = func(row backend.Row) core.Value {
-			return core.True
+		condFunc = func(row backend.Row) (core.Value, error) {
+			return core.True, nil
 		}
 	} else {
 		condFunc = d.Condition.Eval()

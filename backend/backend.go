@@ -25,17 +25,17 @@ type Table interface {
 	GetCols() core.Cols
 	InsertValues(core.ColumnNames, core.ValuesList) error
 	RenameTableName(string)
-	Project(core.ColumnNames, []func(Row) core.Value) (Table, error)
-	Where(func(Row) core.Value) (Table, error)
+	Project(core.ColumnNames, []func(Row) (core.Value, error)) (Table, error)
+	Where(func(Row) (core.Value, error)) (Table, error)
 	CrossJoin(Table) (Table, error)
-	Update(core.ColumnNames, func(Row) core.Value, []func(Row) core.Value) (Table, error)
-	Delete(func(Row) core.Value) (Table, error)
+	Update(core.ColumnNames, func(Row) (core.Value, error), []func(Row) (core.Value, error)) (Table, error)
+	Delete(func(Row) (core.Value, error)) (Table, error)
 }
 
 // Row is interface of row of table.
 type Row interface {
 	// GetValueByColName is used in ColRefNode when getting value
-	GetValueByColName(core.ColumnName) core.Value
+	GetValueByColName(core.ColumnName) (core.Value, error)
 	GetValues() core.Values
 	GetColNames() core.ColumnNames
 	UpdateValue(core.ColumnName, core.Value)
@@ -108,13 +108,13 @@ const (
 )
 
 // GetValueByColName gets value from row by ColName
-func (r *DBRow) GetValueByColName(name core.ColumnName) core.Value {
+func (r *DBRow) GetValueByColName(name core.ColumnName) (core.Value, error) {
 	for k, v := range r.ColNames {
 		if v == name {
-			return r.Values[k]
+			return r.Values[k], nil
 		}
 	}
-	return ColumnNotFound
+	return nil, fmt.Errorf(`ERROR:  column "%v" does not exist`, name.String())
 }
 
 // GetValues gets values from DBRow
@@ -292,16 +292,20 @@ func (t *DBTable) RenameTableName(name string) {
 }
 
 // Project is method to select columns of table.
-func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) core.Value) (Table, error) {
+func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) (core.Value, error)) (Table, error) {
 	rows := t.GetRows()
 	newRows := make(DBRows, 0, len(rows))
 	for _, row := range t.Rows {
 		colNames := make(core.ColumnNames, 0)
 		vals := make(core.Values, 0)
 		for k, fn := range resFuncs {
-			if v := fn(row); v != core.Wildcard {
+			v, err := fn(row)
+			if err != nil {
+				return nil, err
+			}
+			if v != core.Wildcard {
 				if v == ColumnNotFound {
-					return nil, fmt.Errorf("column %v is not found", TargetColNames[k])
+					return nil, fmt.Errorf(`ERROR:  column "%v" does not exist`, TargetColNames[k])
 				}
 				vals = append(vals, v)
 				colNames = append(colNames, TargetColNames[k])
@@ -343,11 +347,15 @@ func (t *DBTable) Project(TargetColNames core.ColumnNames, resFuncs []func(Row) 
 }
 
 // Where filters rows by given where conditions
-func (t *DBTable) Where(condFn func(Row) core.Value) (Table, error) {
+func (t *DBTable) Where(condFn func(Row) (core.Value, error)) (Table, error) {
 	srcRows := t.Rows
 	rows := make([]*DBRow, 0)
 	for _, row := range srcRows {
-		if condFn(row) == core.True {
+		v, err := condFn(row)
+		if err != nil {
+			return nil, err
+		}
+		if v == core.True {
 			rows = append(rows, row)
 		}
 	}
@@ -425,12 +433,20 @@ func uniteCols(l, r core.Cols) core.Cols {
 }
 
 // Update updates records
-func (t *DBTable) Update(colNames core.ColumnNames, condFn func(Row) core.Value, assignValFns []func(Row) core.Value) (Table, error) {
+func (t *DBTable) Update(colNames core.ColumnNames, condFn func(Row) (core.Value, error), assignValFns []func(Row) (core.Value, error)) (Table, error) {
 	rows := t.Rows
 	for _, row := range rows {
-		if condFn(row) == core.True {
+		a, err := condFn(row)
+		if err != nil {
+			return nil, err
+		}
+		if a == core.True {
 			for k, name := range colNames {
-				row.UpdateValue(name, assignValFns[k](row))
+				v, err := assignValFns[k](row)
+				if err != nil {
+					return nil, err
+				}
+				row.UpdateValue(name, v)
 			}
 		}
 	}
@@ -438,10 +454,14 @@ func (t *DBTable) Update(colNames core.ColumnNames, condFn func(Row) core.Value,
 	return nil, nil
 }
 
-func (t *DBTable) Delete(condFn func(Row) core.Value) (Table, error) {
+func (t *DBTable) Delete(condFn func(Row) (core.Value, error)) (Table, error) {
 	updatedRows := make([]*DBRow, 0)
 	for _, row := range t.Rows {
-		if condFn(row) == core.True {
+		v, err := condFn(row)
+		if err != nil {
+			return nil, err
+		}
+		if v == core.True {
 			continue
 		} else {
 			updatedRows = append(updatedRows, row)

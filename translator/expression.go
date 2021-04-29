@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -12,7 +13,7 @@ import (
 
 // ExpressionNode is interface of boolean expression
 type ExpressionNode interface {
-	Eval() func(row backend.Row) core.Value
+	Eval() func(row backend.Row) (core.Value, error)
 }
 
 // BoolConstNode is expression of boolean const
@@ -21,9 +22,9 @@ type BoolConstNode struct {
 }
 
 // Eval evaluates BoolConstNode
-func (b BoolConstNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return b.Bool
+func (b BoolConstNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		return b.Bool, nil
 	}
 }
 
@@ -33,9 +34,9 @@ type IntegerNode struct {
 }
 
 // Eval evaluates IntegerNode
-func (i IntegerNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return i.Val
+func (i IntegerNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		return i.Val, nil
 	}
 }
 
@@ -45,9 +46,9 @@ type FloatNode struct {
 }
 
 // Eval evaluates FloatNode
-func (f FloatNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return f.Val
+func (f FloatNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		return f.Val, nil
 	}
 }
 
@@ -57,9 +58,9 @@ type StringNode struct {
 }
 
 // Eval evaluates StringNode
-func (s StringNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return s.Val
+func (s StringNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		return s.Val, nil
 	}
 }
 
@@ -69,13 +70,16 @@ type ColRefNode struct {
 }
 
 // Eval evaluates ColRefNode
-func (n ColRefNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		val := row.GetValueByColName(n.ColName)
-		if val == nil {
-			return core.Null
+func (n ColRefNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		val, err := row.GetValueByColName(n.ColName)
+		if err != nil {
+			return nil, err
 		}
-		return val
+		if val == nil {
+			return core.Null, nil
+		}
+		return val, nil
 	}
 }
 
@@ -83,9 +87,9 @@ func (n ColRefNode) Eval() func(backend.Row) core.Value {
 type ColWildcardNode struct{}
 
 // Eval evaluates ColWildcardNode
-func (n ColWildcardNode) Eval() func(backend.Row) core.Value {
-	return func(backend.Row) core.Value {
-		return core.Wildcard
+func (n ColWildcardNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(backend.Row) (core.Value, error) {
+		return core.Wildcard, nil
 	}
 }
 
@@ -95,9 +99,13 @@ type NotNode struct {
 }
 
 // Eval evaluates NotNode
-func (nn NotNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return core.Not(nn.Expr.Eval()(row))
+func (nn NotNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		v, err := nn.Expr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
+		return core.Not(v), nil
 	}
 }
 
@@ -108,9 +116,18 @@ type ORNode struct {
 }
 
 // Eval evaluates ORNode
-func (orn ORNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return core.OR(orn.Lexpr.Eval()(row), orn.Rexpr.Eval()(row))
+func (orn ORNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		l, err := orn.Lexpr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
+		r, err := orn.Rexpr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
+
+		return core.OR(l, r), nil
 	}
 }
 
@@ -121,9 +138,17 @@ type ANDNode struct {
 }
 
 // Eval evaluates ANDNode
-func (andn ANDNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		return core.AND(andn.Lexpr.Eval()(row), andn.Rexpr.Eval()(row))
+func (andn ANDNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		l, err := andn.Lexpr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
+		r, err := andn.Rexpr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
+		return core.AND(l, r), nil
 	}
 }
 
@@ -134,22 +159,25 @@ type NullTestNode struct {
 }
 
 // Eval evaluates NullTestNode
-func (n NullTestNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
-		val := n.Expr.Eval()(row)
+func (n NullTestNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
+		val, err := n.Expr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
 		// val is null
 		if n.TestType == EqualNull {
 			if val == core.Null {
-				return core.True
+				return core.True, nil
 			}
-			return core.False
+			return core.False, nil
 		}
 
 		// val is not null
 		if val == core.Null {
-			return core.False
+			return core.False, nil
 		}
-		return core.True
+		return core.True, nil
 	}
 }
 
@@ -161,10 +189,14 @@ type CaseNode struct {
 }
 
 // Eval evaluates CaseNode
-func (c *CaseNode) Eval() func(backend.Row) core.Value {
-	return func(row backend.Row) core.Value {
+func (c *CaseNode) Eval() func(backend.Row) (core.Value, error) {
+	return func(row backend.Row) (core.Value, error) {
 		for k, expr := range c.CaseWhenExprs {
-			if expr.Eval()(row) == core.True {
+			v, err := expr.Eval()(row)
+			if err != nil {
+				return nil, err
+			}
+			if v == core.True {
 				return c.CaseResultExprs[k].Eval()(row)
 			}
 		}
@@ -181,46 +213,51 @@ type BinOpNode struct {
 }
 
 // Eval evaluates BinOpNode
-func (e BinOpNode) Eval() func(backend.Row) core.Value {
+func (e BinOpNode) Eval() func(backend.Row) (core.Value, error) {
 	// ref: translator/const.go: MathOp
 	// ref: translator/postgres.go: func mathOperator()
-	return func(row backend.Row) core.Value {
-		l := e.Lexpr.Eval()(row)
-		r := e.Rexpr.Eval()(row)
+	return func(row backend.Row) (core.Value, error) {
+		l, err := e.Lexpr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
+		r, err := e.Rexpr.Eval()(row)
+		if err != nil {
+			return nil, err
+		}
 		if l == core.Null || r == core.Null {
-			return core.Null
+			return core.Null, nil
 		}
 
 		switch e.Op {
 		case EqualOp:
-			return toSQLBool(l == r)
+			return toSQLBool(l == r), nil
 		case NotEqualOp:
-			return toSQLBool(l != r)
+			return toSQLBool(l != r), nil
 		case CONCAT:
 			lStr := fmt.Sprintf("%v", l)
 			rStr := fmt.Sprintf("%v", r)
-			return lStr + rStr
+			return lStr + rStr, nil
 		}
 
 		if reflect.ValueOf(l).Kind() == reflect.Int {
 			if reflect.ValueOf(r).Kind() == reflect.Int {
-				return compIntInt(e.Op, l, r)
+				return compIntInt(e.Op, l, r), nil
 			}
-			return compIntFloat(e.Op, l, r)
+			return compIntFloat(e.Op, l, r), nil
 		}
 
 		if reflect.ValueOf(l).Kind() == reflect.Float64 {
 			if reflect.ValueOf(r).Kind() == reflect.Float64 {
-				return compFloatFloat(e.Op, l, r)
+				return compFloatFloat(e.Op, l, r), nil
 			}
-			return compFloatInt(e.Op, l, r)
+			return compFloatInt(e.Op, l, r), nil
 		}
 		if reflect.ValueOf(l).Kind() == reflect.String && reflect.ValueOf(r).Kind() == reflect.String {
-			return compStrStr(e.Op, l, r)
+			return compStrStr(e.Op, l, r), nil
 		}
 
-		fmt.Println("Not Implemented")
-		return core.Null
+		return core.Null, errors.New("Not Implemented")
 	}
 }
 

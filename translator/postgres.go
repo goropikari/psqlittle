@@ -306,7 +306,10 @@ func (pg *PGTranlator) TranslateInsert(stmt *pg_query.InsertStmt) (RelationalAlg
 		vals := make(core.Values, 0, len(items))
 		for _, item := range items {
 			var r backend.Row
-			val := constructExprNode(item).Eval()(r)
+			val, err := constructExprNode(item).Eval()(r)
+			if err != nil {
+				return nil, err
+			}
 			vals = append(vals, val)
 		}
 		valsLists = append(valsLists, vals)

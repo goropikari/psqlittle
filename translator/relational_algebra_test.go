@@ -120,12 +120,13 @@ func TestORNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	row := mock.NewMockRow(ctrl)
-	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any()).AnyTimes()
+	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any(), nil).AnyTimes()
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual := tt.node.Eval()(row)
+			actual, err := tt.node.Eval()(row)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -267,12 +268,13 @@ func TestANDNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	row := mock.NewMockRow(ctrl)
-	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any()).AnyTimes()
+	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any(), nil).AnyTimes()
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual := tt.node.Eval()(row)
+			actual, err := tt.node.Eval()(row)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -373,9 +375,10 @@ func TestNullTestNode(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			row := mock.NewMockRow(ctrl)
-			row.EXPECT().GetValueByColName(gomock.Any()).Return(tt.rowRes).AnyTimes()
+			row.EXPECT().GetValueByColName(gomock.Any()).Return(tt.rowRes, nil).AnyTimes()
 
-			actual := tt.node.Eval()(row)
+			actual, err := tt.node.Eval()(row)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -510,12 +513,13 @@ func TestBinOpNode(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	row := mock.NewMockRow(ctrl)
-	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any()).AnyTimes()
+	row.EXPECT().GetValueByColName(gomock.Any()).Return(gomock.Any(), nil).AnyTimes()
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actual := tt.node.Eval()(row)
+			actual, err := tt.node.Eval()(row)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -548,9 +552,10 @@ func TestEvalColRefNode(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			row := mock.NewMockRow(ctrl)
-			row.EXPECT().GetValueByColName(tt.givenName).Return(tt.expected).AnyTimes()
+			row.EXPECT().GetValueByColName(tt.givenName).Return(tt.expected, nil).AnyTimes()
 
-			actual := tt.node.Eval()(row)
+			actual, err := tt.node.Eval()(row)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -660,11 +665,11 @@ func (s *SpyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error {
 
 func (s *SpyTable) RenameTableName(name string) {}
 
-func (s *SpyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Value) (backend.Table, error) {
+func (s *SpyTable) Project(cs core.ColumnNames, fns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
-func (s *SpyTable) Where(fn func(backend.Row) core.Value) (backend.Table, error) {
+func (s *SpyTable) Where(fn func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
@@ -672,11 +677,11 @@ func (s *SpyTable) CrossJoin(backend.Table) (backend.Table, error) {
 	return nil, nil
 }
 
-func (t *SpyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) core.Value, assignValFns []func(backend.Row) core.Value) (backend.Table, error) {
+func (t *SpyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) (core.Value, error), assignValFns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
-func (s *SpyTable) Delete(fn func(backend.Row) core.Value) (backend.Table, error) {
+func (s *SpyTable) Delete(fn func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
 
@@ -686,7 +691,7 @@ type SpyRow struct {
 	ColNames core.ColumnNames
 }
 
-func (r *SpyRow) GetValueByColName(name core.ColumnName) core.Value {
+func (r *SpyRow) GetValueByColName(name core.ColumnName) (core.Value, error) {
 	return r.MockRow.GetValueByColName(name)
 }
 

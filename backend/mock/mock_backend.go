@@ -131,7 +131,7 @@ func (mr *MockTableMockRecorder) CrossJoin(arg0 interface{}) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockTable) Delete(arg0 func(backend.Row) core.Value) (backend.Table, error) {
+func (m *MockTable) Delete(arg0 func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0)
 	ret0, _ := ret[0].(backend.Table)
@@ -216,7 +216,7 @@ func (mr *MockTableMockRecorder) InsertValues(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // Project mocks base method.
-func (m *MockTable) Project(arg0 core.ColumnNames, arg1 []func(backend.Row) core.Value) (backend.Table, error) {
+func (m *MockTable) Project(arg0 core.ColumnNames, arg1 []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Project", arg0, arg1)
 	ret0, _ := ret[0].(backend.Table)
@@ -243,7 +243,7 @@ func (mr *MockTableMockRecorder) RenameTableName(arg0 interface{}) *gomock.Call 
 }
 
 // Update mocks base method.
-func (m *MockTable) Update(arg0 core.ColumnNames, arg1 func(backend.Row) core.Value, arg2 []func(backend.Row) core.Value) (backend.Table, error) {
+func (m *MockTable) Update(arg0 core.ColumnNames, arg1 func(backend.Row) (core.Value, error), arg2 []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1, arg2)
 	ret0, _ := ret[0].(backend.Table)
@@ -258,7 +258,7 @@ func (mr *MockTableMockRecorder) Update(arg0, arg1, arg2 interface{}) *gomock.Ca
 }
 
 // Where mocks base method.
-func (m *MockTable) Where(arg0 func(backend.Row) core.Value) (backend.Table, error) {
+func (m *MockTable) Where(arg0 func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Where", arg0)
 	ret0, _ := ret[0].(backend.Table)
@@ -310,11 +310,12 @@ func (mr *MockRowMockRecorder) GetColNames() *gomock.Call {
 }
 
 // GetValueByColName mocks base method.
-func (m *MockRow) GetValueByColName(arg0 core.ColumnName) core.Value {
+func (m *MockRow) GetValueByColName(arg0 core.ColumnName) (core.Value, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValueByColName", arg0)
 	ret0, _ := ret[0].(core.Value)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetValueByColName indicates an expected call of GetValueByColName.

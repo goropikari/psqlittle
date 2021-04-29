@@ -202,10 +202,10 @@ func TestProject(t *testing.T) {
 	cn1 := core.ColumnName{TableName: "hoge", Name: "id"}
 	cn2 := core.ColumnName{TableName: "hoge", Name: "name"}
 
-	fn1 := func(row Row) core.Value {
+	fn1 := func(row Row) (core.Value, error) {
 		return row.GetValueByColName(cn1)
 	}
-	fn2 := func(row Row) core.Value {
+	fn2 := func(row Row) (core.Value, error) {
 		return row.GetValueByColName(cn2)
 	}
 
@@ -214,7 +214,7 @@ func TestProject(t *testing.T) {
 		expected      DBRows
 		givenTable    DBTable
 		givenColNames core.ColumnNames
-		givenFncs     []func(row Row) core.Value
+		givenFncs     []func(row Row) (core.Value, error)
 	}{
 		{
 			name: "test project columns",
@@ -245,7 +245,7 @@ func TestProject(t *testing.T) {
 				{TableName: "hoge", Name: "name"},
 				{TableName: "hoge", Name: "id"},
 			},
-			givenFncs: []func(Row) core.Value{fn1, fn2},
+			givenFncs: []func(Row) (core.Value, error){fn1, fn2},
 			expected: DBRows{
 				{
 					Values: core.Values{"Hello", 1, "Hello"},
