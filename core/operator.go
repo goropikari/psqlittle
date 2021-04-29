@@ -53,3 +53,17 @@ func AND(x, y Value) Value {
 	}
 	return Null
 }
+
+func LessForSort(x, y Value, sortDir int) bool {
+	if y == Null {
+		return true
+	}
+	if x == Null {
+		return false
+	}
+
+	if sortDir < 3 {
+		return x.(int) < y.(int)
+	}
+	return x.(int) > y.(int)
+}

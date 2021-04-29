@@ -215,6 +215,21 @@ func (mr *MockTableMockRecorder) InsertValues(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertValues", reflect.TypeOf((*MockTable)(nil).InsertValues), arg0, arg1)
 }
 
+// OrderBy mocks base method.
+func (m *MockTable) OrderBy(arg0 core.ColumnNames, arg1 []int) (backend.Table, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderBy", arg0, arg1)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OrderBy indicates an expected call of OrderBy.
+func (mr *MockTableMockRecorder) OrderBy(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderBy", reflect.TypeOf((*MockTable)(nil).OrderBy), arg0, arg1)
+}
+
 // Project mocks base method.
 func (m *MockTable) Project(arg0 core.ColumnNames, arg1 []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	m.ctrl.T.Helper()

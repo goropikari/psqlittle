@@ -193,6 +193,10 @@ func (t *EmptyTable) CrossJoin(backend.Table) (backend.Table, error) {
 	return nil, nil
 }
 
+func (t *EmptyTable) OrderBy(ns core.ColumnNames, dirs []int) (backend.Table, error) {
+	return nil, nil
+}
+
 func (t *EmptyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) (core.Value, error), assignValFns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
@@ -315,6 +319,23 @@ func crossJoinTable(tb1, tb2 backend.Table) (backend.Table, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return tb, nil
+}
+
+type OrderByNode struct {
+	SortKeys core.ColumnNames
+	SortDirs []int
+	RANode   RelationalAlgebraNode
+}
+
+func (o *OrderByNode) Eval(db backend.DB) (backend.Table, error) {
+	tb, err := o.RANode.Eval(db)
+	if err != nil {
+		return nil, err
+	}
+
+	tb.OrderBy(o.SortKeys, o.SortDirs)
 
 	return tb, nil
 }

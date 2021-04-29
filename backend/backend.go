@@ -5,6 +5,7 @@ package backend
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/goropikari/mysqlite2/core"
 )
@@ -28,6 +29,7 @@ type Table interface {
 	Project(core.ColumnNames, []func(Row) (core.Value, error)) (Table, error)
 	Where(func(Row) (core.Value, error)) (Table, error)
 	CrossJoin(Table) (Table, error)
+	OrderBy(core.ColumnNames, []int) (Table, error)
 	Update(core.ColumnNames, func(Row) (core.Value, error), []func(Row) (core.Value, error)) (Table, error)
 	Delete(func(Row) (core.Value, error)) (Table, error)
 }
@@ -430,6 +432,51 @@ func uniteCols(l, r core.Cols) core.Cols {
 	}
 
 	return cs
+}
+
+// OrderBy sorts rows by given column names
+func (t *DBTable) OrderBy(cols core.ColumnNames, sortDirs []int) (Table, error) {
+	if err := validateOrderByColumn(t.ColNames, cols); err != nil {
+		return nil, err
+	}
+
+	rows := t.Rows
+	name := cols[0]
+	sortDir := sortDirs[0]
+	sort.Slice(rows, func(i, j int) bool {
+		l, _ := rows[i].GetValueByColName(name)
+		r, _ := rows[j].GetValueByColName(name)
+
+		return core.LessForSort(l, r, sortDir)
+	})
+
+	t.Rows = rows
+
+	return t, nil
+}
+
+func validateOrderByColumn(tbCols, targets core.ColumnNames) error {
+	for _, tc := range targets {
+		if (tc == core.ColumnName{}) {
+			// expresison
+			continue
+		}
+		if !haveColumn(tc, tbCols) {
+			return fmt.Errorf(`column "%v" does not exist`, tc.String())
+		}
+	}
+
+	return nil
+}
+
+func haveColumn(c core.ColumnName, cs core.ColumnNames) bool {
+	for _, col := range cs {
+		if c == col {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Update updates records

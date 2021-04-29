@@ -185,12 +185,32 @@ func (pg *PGTranlator) TranslateSelect(pgtree *pg_query.SelectStmt) (RelationalA
 
 	table := interpretFromClause(pgtree.GetFromClause())
 	whereNode := constructWhereNode(pgtree.GetWhereClause(), table)
+	orderByNode := constructOrderByNode(pgtree.GetSortClause(), whereNode)
 
 	return &ProjectionNode{
 		TargetColNames: targetColNames,
 		ResTargets:     resTargetNodes,
-		RANode:         whereNode,
+		RANode:         orderByNode,
 	}, nil
+}
+
+func constructOrderByNode(sortTree []*pg_query.Node, whereNode RelationalAlgebraNode) RelationalAlgebraNode {
+	if len(sortTree) == 0 {
+		return whereNode
+	}
+	sortKeys := make(core.ColumnNames, 0)
+	sortDirs := make([]int, 0)
+	sortKey := getColName(sortTree[0].GetSortBy().GetNode().GetColumnRef())
+	sortDir := int(sortTree[0].GetSortBy().GetSortbyDir())
+	// TODO: get all specified columns
+	sortKeys = append(sortKeys, sortKey)
+	sortDirs = append(sortDirs, sortDir)
+
+	return &OrderByNode{
+		SortKeys: sortKeys,
+		SortDirs: sortDirs,
+		RANode:   whereNode,
+	}
 }
 
 func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {

@@ -125,6 +125,18 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			name:  "order by",
+			query: "select h.id, h.name from hoge as h order by h.id desc",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "name"},
+				Records: core.ValuesList{
+					{789, "mike"},
+					{456, "hanako"},
+					{123, "taro"},
+				},
+			},
+		},
+		{
 			name:  "complex condition",
 			query: "select hoge.name from hoge where hoge.id > 123 and hoge.cid < 1000 or hoge.name = 'hanako'",
 			expected: &trans.QueryResult{
