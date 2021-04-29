@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/goropikari/mysqlite2/backend"
 	"github.com/goropikari/mysqlite2/core"
@@ -166,7 +167,7 @@ func (pg *PGTranlator) TranslateDelete(node *pg_query.DeleteStmt) (RelationalAlg
 // TranslateUpdate translates sql parse tree into UpdateNode
 func (pg *PGTranlator) TranslateUpdate(node *pg_query.UpdateStmt) (RelationalAlgebraNode, error) {
 	cond := constructExprNode(node.GetWhereClause())
-	tableName := node.GetRelation().Relname
+	tableName := strings.ToLower(node.GetRelation().Relname)
 	targetColNames, resTargetNodes := interpreteUpdateTargetList(node.GetTargetList())
 
 	return &UpdateNode{
@@ -272,8 +273,8 @@ func interpreteUpdateTargetList(targetList []*pg_query.Node) (core.ColumnNames, 
 	names := make(core.ColumnNames, 0, len(targetList))
 	resExprs := make([]ExpressionNode, 0, len(targetList))
 	for _, target := range targetList {
-		tableName := target.GetResTarget().GetName()
-		colName := target.GetResTarget().GetIndirection()[0].GetString_().GetStr()
+		tableName := strings.ToLower(target.GetResTarget().GetName())
+		colName := strings.ToLower(target.GetResTarget().GetIndirection()[0].GetString_().GetStr())
 		val := constructExprNode(target.GetResTarget().GetVal())
 
 		names = append(names, core.ColumnName{TableName: tableName, Name: colName})
@@ -285,7 +286,7 @@ func interpreteUpdateTargetList(targetList []*pg_query.Node) (core.ColumnNames, 
 
 // TranslateCreateTable translates sql parse tree into CreateTableNode
 func (pg *PGTranlator) TranslateCreateTable(stmt *pg_query.CreateStmt) (RelationalAlgebraNode, error) {
-	tableName := stmt.GetRelation().GetRelname()
+	tableName := strings.ToLower(stmt.GetRelation().GetRelname())
 	colDefs := prepareColDefs(stmt.GetTableElts(), tableName)
 
 	return &CreateTableNode{
@@ -296,7 +297,7 @@ func (pg *PGTranlator) TranslateCreateTable(stmt *pg_query.CreateStmt) (Relation
 
 // TranslateInsert translates sql parse tree into InsertNode
 func (pg *PGTranlator) TranslateInsert(stmt *pg_query.InsertStmt) (RelationalAlgebraNode, error) {
-	tableName := stmt.GetRelation().GetRelname()
+	tableName := strings.ToLower(stmt.GetRelation().GetRelname())
 	rawValsLists := stmt.GetSelectStmt().GetSelectStmt().GetValuesLists()
 
 	valsLists := make(core.ValuesList, 0, len(rawValsLists))
@@ -316,7 +317,7 @@ func (pg *PGTranlator) TranslateInsert(stmt *pg_query.InsertStmt) (RelationalAlg
 	for _, col := range cols {
 		colNames = append(colNames, core.ColumnName{
 			TableName: tableName,
-			Name:      col.GetResTarget().GetName(),
+			Name:      strings.ToLower(col.GetResTarget().GetName()),
 		})
 	}
 
@@ -335,8 +336,8 @@ func prepareColDefs(defNodes []*pg_query.Node, tableName string) core.Cols {
 		typ := mapGoType(def.GetTypeName().GetNames()[1].GetString_().GetStr())
 		col := core.Col{
 			ColName: core.ColumnName{
-				TableName: tableName,
-				Name:      name,
+				TableName: strings.ToLower(tableName),
+				Name:      strings.ToLower(name),
 			},
 			ColType: typ,
 		}
@@ -361,18 +362,19 @@ func getColName(colRef *pg_query.ColumnRef) core.ColumnName {
 	fields := colRef.GetFields()
 	if len(fields) == 1 {
 		// column is specified by column name
-		colName := fields[0].GetString_().GetStr()
+		colName := strings.ToLower(fields[0].GetString_().GetStr())
 		return core.ColumnName{Name: colName}
 	}
 	if len(fields) == 2 {
 		// column is specified by table name and column name
-		tableName := fields[0].GetString_().GetStr()
-		colName := fields[1].GetString_().GetStr()
+		tableName := strings.ToLower(fields[0].GetString_().GetStr())
+		colName := strings.ToLower(fields[1].GetString_().GetStr())
 		return core.ColumnName{TableName: tableName, Name: colName}
 	}
 
 	// Not Implemented
 	// This columnRef includes schema name or something.
+	fmt.Println("Not Implemented: This columnRef includes schema name or something.")
 	return core.ColumnName{}
 }
 

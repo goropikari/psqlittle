@@ -30,6 +30,30 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			name:  "select *2",
+			query: "SELECT * from HOGE",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "cid", "name"},
+				Records: core.ValuesList{
+					{123, 1000, "taro"},
+					{456, 500, "hanako"},
+					{789, nil, "mike"},
+				},
+			},
+		},
+		{
+			name:  "select *3",
+			query: "SELECT hoge.ID, HOGE.cid, hoge.name from HOGE",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "cid", "name"},
+				Records: core.ValuesList{
+					{123, 1000, "taro"},
+					{456, 500, "hanako"},
+					{789, nil, "mike"},
+				},
+			},
+		},
+		{
 			name:  "rename table",
 			query: "select h.id, h.name from hoge as h",
 			expected: &trans.QueryResult{
