@@ -5,6 +5,8 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -13,9 +15,7 @@ import (
 )
 
 func main() {
-	// db := prepareDB()
-
-	db := backend.NewDatabase()
+	db, path := setupDB()
 	for {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("sql> ")
@@ -43,6 +43,8 @@ func main() {
 			continue
 		}
 		if res == nil {
+			// DDL
+			writeLog(path, query)
 			continue
 		}
 		recs := res.GetRecords()
@@ -51,28 +53,52 @@ func main() {
 			fmt.Printf("row %v: %v\n", k, rec)
 		}
 	}
-
 }
 
-func prepareDB() backend.DB {
+func writeLog(path, query string) {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(query); err != nil {
+		log.Println(err)
+	}
+}
+
+func setupDB() (backend.DB, string) {
+	path := getEnvWithDefault("DB_DATA_PATH", "data.db")
+
 	db := backend.NewDatabase()
 
-	query := "create table hoge (id int, name varchar(255))"
-	raNode, _ := trans.NewPGTranslator(query).Translate()
-	raNode.Eval(db)
-	if _, err := raNode.Eval(db); err != nil {
-		fmt.Println("error:", err)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return db, path
 	}
 
-	query = "insert into hoge (name, id) values ('taro', 9876)"
-	raNode, _ = trans.NewPGTranslator(query).Translate()
-	raNode.Eval(db)
-	query = "insert into hoge (name, id) values ('hanako', 12343)"
-	raNode, _ = trans.NewPGTranslator(query).Translate()
-	raNode.Eval(db)
-	query = "insert into hoge (name, id) values ('mike', 7893)"
-	raNode, _ = trans.NewPGTranslator(query).Translate()
-	raNode.Eval(db)
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
 
-	return db
+	ss := strings.Split(string(bytes), ";")
+	for _, s := range ss {
+		if strings.Trim(s, " \n") == "" {
+			continue
+		}
+		raNode, _ := trans.NewPGTranslator(s).Translate()
+		_, err := raNode.Eval(db)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+	}
+
+	return db, path
+}
+
+func getEnvWithDefault(key string, d string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return d
 }

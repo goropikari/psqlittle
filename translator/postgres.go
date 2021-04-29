@@ -52,7 +52,7 @@ func (qs *QueryStatement) Eval(db backend.DB) (Result, error) {
 	}
 
 	if tb == nil {
-		return &QueryResult{}, nil
+		return nil, nil
 	}
 
 	rows := tb.GetRows()
