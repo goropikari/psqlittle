@@ -24,7 +24,7 @@ type Table interface {
 	GetRows() []Row
 	GetCols() core.Cols
 	InsertValues(core.ColumnNames, core.ValuesList) error
-	UpdateTableName(string)
+	RenameTableName(string)
 	Project(core.ColumnNames, []func(Row) core.Value) (Table, error)
 	Where(func(Row) core.Value) (Table, error)
 	CrossJoin(Table) (Table, error)
@@ -273,8 +273,8 @@ func (t *DBTable) validateInsert(names core.ColumnNames, valuesList core.ValuesL
 	return nil
 }
 
-// UpdateTableName updates table name
-func (t *DBTable) UpdateTableName(name string) {
+// RenameTableName updates table name
+func (t *DBTable) RenameTableName(name string) {
 	t.Name = name
 
 	for i := 0; i < len(t.ColNames); i++ {

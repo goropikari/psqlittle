@@ -230,6 +230,18 @@ func (mr *MockTableMockRecorder) Project(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Project", reflect.TypeOf((*MockTable)(nil).Project), arg0, arg1)
 }
 
+// RenameTableName mocks base method.
+func (m *MockTable) RenameTableName(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RenameTableName", arg0)
+}
+
+// RenameTableName indicates an expected call of RenameTableName.
+func (mr *MockTableMockRecorder) RenameTableName(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenameTableName", reflect.TypeOf((*MockTable)(nil).RenameTableName), arg0)
+}
+
 // Update mocks base method.
 func (m *MockTable) Update(arg0 core.ColumnNames, arg1 func(backend.Row) core.Value, arg2 []func(backend.Row) core.Value) (backend.Table, error) {
 	m.ctrl.T.Helper()
@@ -243,18 +255,6 @@ func (m *MockTable) Update(arg0 core.ColumnNames, arg1 func(backend.Row) core.Va
 func (mr *MockTableMockRecorder) Update(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockTable)(nil).Update), arg0, arg1, arg2)
-}
-
-// UpdateTableName mocks base method.
-func (m *MockTable) UpdateTableName(arg0 string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateTableName", arg0)
-}
-
-// UpdateTableName indicates an expected call of UpdateTableName.
-func (mr *MockTableMockRecorder) UpdateTableName(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTableName", reflect.TypeOf((*MockTable)(nil).UpdateTableName), arg0)
 }
 
 // Where mocks base method.

@@ -658,7 +658,7 @@ func (s *SpyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error {
 	return nil
 }
 
-func (s *SpyTable) UpdateTableName(name string) {}
+func (s *SpyTable) RenameTableName(name string) {}
 
 func (s *SpyTable) Project(cs core.ColumnNames, fns []func(backend.Row) core.Value) (backend.Table, error) {
 	return nil, nil

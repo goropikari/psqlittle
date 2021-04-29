@@ -48,7 +48,7 @@ func (rt *RenameTableNode) Eval(db backend.DB) (backend.Table, error) {
 	}
 
 	newTable := tb.Copy()
-	newTable.UpdateTableName(rt.Alias)
+	newTable.RenameTableName(rt.Alias)
 
 	return newTable, nil
 }
@@ -173,7 +173,7 @@ func (t *EmptyTable) GetCols() core.Cols {
 	return nil
 }
 
-func (t *EmptyTable) UpdateTableName(name string) {}
+func (t *EmptyTable) RenameTableName(name string) {}
 
 func (t *EmptyTable) InsertValues(cs core.ColumnNames, vs core.ValuesList) error { return nil }
 
