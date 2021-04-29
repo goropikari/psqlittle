@@ -215,6 +215,21 @@ func (mr *MockTableMockRecorder) InsertValues(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertValues", reflect.TypeOf((*MockTable)(nil).InsertValues), arg0, arg1)
 }
 
+// Limit mocks base method.
+func (m *MockTable) Limit(arg0 int) (backend.Table, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Limit", arg0)
+	ret0, _ := ret[0].(backend.Table)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Limit indicates an expected call of Limit.
+func (mr *MockTableMockRecorder) Limit(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Limit", reflect.TypeOf((*MockTable)(nil).Limit), arg0)
+}
+
 // OrderBy mocks base method.
 func (m *MockTable) OrderBy(arg0 core.ColumnNames, arg1 []int) (backend.Table, error) {
 	m.ctrl.T.Helper()

@@ -197,6 +197,10 @@ func (t *EmptyTable) OrderBy(ns core.ColumnNames, dirs []int) (backend.Table, er
 	return nil, nil
 }
 
+func (t *EmptyTable) Limit(n int) (backend.Table, error) {
+	return nil, nil
+}
+
 func (t *EmptyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) (core.Value, error), assignValFns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
@@ -323,12 +327,14 @@ func crossJoinTable(tb1, tb2 backend.Table) (backend.Table, error) {
 	return tb, nil
 }
 
+// OrderByNode is a Node for order by clause
 type OrderByNode struct {
 	SortKeys core.ColumnNames
 	SortDirs []int
 	RANode   RelationalAlgebraNode
 }
 
+// Eval evaluates OrderByNode
 func (o *OrderByNode) Eval(db backend.DB) (backend.Table, error) {
 	tb, err := o.RANode.Eval(db)
 	if err != nil {
@@ -337,6 +343,26 @@ func (o *OrderByNode) Eval(db backend.DB) (backend.Table, error) {
 
 	tb.OrderBy(o.SortKeys, o.SortDirs)
 
+	return tb, nil
+}
+
+// LimitNode is a Node for limit clause
+type LimitNode struct {
+	Count  int
+	RANode RelationalAlgebraNode
+}
+
+// Eval evaluates LimitNode
+func (l *LimitNode) Eval(db backend.DB) (backend.Table, error) {
+	tb, err := l.RANode.Eval(db)
+	if err != nil {
+		return nil, err
+	}
+
+	tb, err = tb.Limit(l.Count)
+	if err != nil {
+		return nil, err
+	}
 	return tb, nil
 }
 

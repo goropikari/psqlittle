@@ -2,7 +2,7 @@ build:
 	go build -o bin/repl repl/main.go
 
 test: mockgen
-	go test $(shell go list ./...)
+	go test -v $(shell go list ./...)
 
 mockgen:
 	find -name "mock_*.go" | xargs -I {} rm -f {}

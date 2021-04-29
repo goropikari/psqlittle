@@ -30,6 +30,7 @@ type Table interface {
 	Where(func(Row) (core.Value, error)) (Table, error)
 	CrossJoin(Table) (Table, error)
 	OrderBy(core.ColumnNames, []int) (Table, error)
+	Limit(int) (Table, error)
 	Update(core.ColumnNames, func(Row) (core.Value, error), []func(Row) (core.Value, error)) (Table, error)
 	Delete(func(Row) (core.Value, error)) (Table, error)
 }
@@ -477,6 +478,29 @@ func haveColumn(c core.ColumnName, cs core.ColumnNames) bool {
 	}
 
 	return false
+}
+
+// Limit selects limited number of record
+func (t *DBTable) Limit(N int) (Table, error) {
+	if len(t.Rows) <= N {
+		return t, nil
+	}
+	oldRows := t.GetRows()
+	newRows := make([]*DBRow, 0)
+	for i := 0; i < N; i++ {
+		row := oldRows[i]
+		newRows = append(newRows,
+			&DBRow{
+				ColNames: row.GetColNames(),
+				Values:   row.GetValues(),
+			})
+	}
+
+	return &DBTable{
+		ColNames: t.GetColNames(),
+		Cols:     t.GetCols(),
+		Rows:     newRows,
+	}, nil
 }
 
 // Update updates records

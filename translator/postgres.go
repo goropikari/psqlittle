@@ -3,6 +3,7 @@ package translator
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -186,11 +187,37 @@ func (pg *PGTranlator) TranslateSelect(pgtree *pg_query.SelectStmt) (RelationalA
 	table := interpretFromClause(pgtree.GetFromClause())
 	whereNode := constructWhereNode(pgtree.GetWhereClause(), table)
 	orderByNode := constructOrderByNode(pgtree.GetSortClause(), whereNode)
+	limitNode, err := constructLimitNode(pgtree.GetLimitCount(), orderByNode)
+	if err != nil {
+		return nil, err
+	}
 
 	return &ProjectionNode{
 		TargetColNames: targetColNames,
 		ResTargets:     resTargetNodes,
-		RANode:         orderByNode,
+		RANode:         limitNode,
+	}, nil
+}
+
+func constructLimitNode(limitNode *pg_query.Node, orderByNode RelationalAlgebraNode) (RelationalAlgebraNode, error) {
+	if limitNode == nil {
+		return orderByNode, nil
+	}
+
+	expr := constructExprNode(limitNode)
+	var r backend.Row
+	val, err := expr.Eval()(r)
+	if err != nil {
+		return nil, err
+	}
+
+	if reflect.ValueOf(val).Kind() != reflect.Int {
+		return nil, errors.New("ERROR:  argument of LIMIT must not contain variables")
+	}
+
+	return &LimitNode{
+		Count:  val.(int),
+		RANode: orderByNode,
 	}, nil
 }
 

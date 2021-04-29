@@ -137,6 +137,17 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			name:  "limit clause",
+			query: "select h.id, h.name from hoge as h order by h.id desc limit 2",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "name"},
+				Records: core.ValuesList{
+					{789, "mike"},
+					{456, "hanako"},
+				},
+			},
+		},
+		{
 			name:  "complex condition",
 			query: "select hoge.name from hoge where hoge.id > 123 and hoge.cid < 1000 or hoge.name = 'hanako'",
 			expected: &trans.QueryResult{
@@ -260,11 +271,11 @@ func TestSelectQuery(t *testing.T) {
 		},
 	}
 
+	db := prepareDB()
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 
-			db := prepareDB()
 			raNode, _ := trans.NewPGTranslator(tt.query).Translate()
 			actual, _ := raNode.Eval(db)
 
@@ -299,8 +310,8 @@ func TestUpdateQuery(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-
 			db := prepareDB()
+
 			raNode, _ := trans.NewPGTranslator(tt.updateQuery).Translate()
 			actual, _ := raNode.Eval(db)
 			raNode, _ = trans.NewPGTranslator(tt.selectQuery).Translate()
@@ -320,7 +331,7 @@ func TestDeleteQuery(t *testing.T) {
 		expected    trans.Result
 	}{
 		{
-			name:        "update",
+			name:        "delete",
 			deleteQuery: "delete from hoge where hoge.name = 'taro'",
 			selectQuery: "select * from hoge",
 			expected: &trans.QueryResult{
@@ -347,6 +358,7 @@ func TestDeleteQuery(t *testing.T) {
 		})
 	}
 }
+
 func prepareDB() backend.DB {
 	db := backend.NewDatabase()
 

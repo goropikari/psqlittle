@@ -681,6 +681,10 @@ func (s *SpyTable) OrderBy(names core.ColumnNames, dirs []int) (backend.Table, e
 	return nil, nil
 }
 
+func (s *SpyTable) Limit(n int) (backend.Table, error) {
+	return nil, nil
+}
+
 func (t *SpyTable) Update(colNames core.ColumnNames, condFn func(backend.Row) (core.Value, error), assignValFns []func(backend.Row) (core.Value, error)) (backend.Table, error) {
 	return nil, nil
 }
