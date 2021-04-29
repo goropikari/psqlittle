@@ -148,6 +148,18 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			name:  "subquery",
+			query: "select * from (select *, hoge.id from hoge) as h",
+			expected: &trans.QueryResult{
+				Columns: []string{"id", "cid", "name", "id"},
+				Records: core.ValuesList{
+					{123, 1000, "taro", 123},
+					{456, 500, "hanako", 456},
+					{789, nil, "mike", 789},
+				},
+			},
+		},
+		{
 			name:  "complex condition",
 			query: "select hoge.name from hoge where hoge.id > 123 and hoge.cid < 1000 or hoge.name = 'hanako'",
 			expected: &trans.QueryResult{

@@ -184,7 +184,10 @@ func (pg *PGTranlator) TranslateSelect(pgtree *pg_query.SelectStmt) (RelationalA
 	targetList := pgtree.GetTargetList()
 	targetColNames, resTargetNodes := interpreteTargetList(targetList)
 
-	table := interpretFromClause(pgtree.GetFromClause())
+	table, err := pg.interpretFromClause(pgtree.GetFromClause())
+	if err != nil {
+		return nil, err
+	}
 	whereNode := constructWhereNode(pgtree.GetWhereClause(), table)
 	orderByNode := constructOrderByNode(pgtree.GetSortClause(), whereNode)
 	limitNode, err := constructLimitNode(pgtree.GetLimitCount(), orderByNode)
@@ -240,7 +243,7 @@ func constructOrderByNode(sortTree []*pg_query.Node, whereNode RelationalAlgebra
 	}
 }
 
-func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {
+func (pg *PGTranlator) interpretFromClause(fromTree []*pg_query.Node) (RelationalAlgebraNode, error) {
 	tables := make([]RelationalAlgebraNode, 0, len(fromTree))
 
 	for _, relation := range fromTree {
@@ -258,6 +261,18 @@ func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {
 				})
 			}
 		}
+		if relation.GetRangeSubselect() != nil {
+			subQueryTree := relation.GetRangeSubselect().GetSubquery().GetSelectStmt()
+			alias := relation.GetRangeSubselect().Alias.GetAliasname()
+			ra, err := pg.TranslateSelect(subQueryTree)
+			if err != nil {
+				return nil, err
+			}
+			tables = append(tables, &RenameTableNode{
+				Alias: alias,
+				Table: ra,
+			})
+		}
 		if relation.GetJoinExpr() != nil {
 			// Not Implemented
 		}
@@ -265,7 +280,7 @@ func interpretFromClause(fromTree []*pg_query.Node) RelationalAlgebraNode {
 
 	table := crossJoinRA(tables)
 
-	return table
+	return table, nil
 }
 
 func crossJoinRA(ras []RelationalAlgebraNode) RelationalAlgebraNode {
