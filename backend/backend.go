@@ -59,7 +59,7 @@ func NewDatabase() *Database {
 // CreateTable is method to create table
 func (db *Database) CreateTable(tableName string, cols core.Cols) error {
 	if _, ok := db.Tables[tableName]; ok {
-		return ErrTableAlreadyExists
+		return fmt.Errorf(`ERROR:  relation %v already exist`, tableName)
 	}
 
 	colNames := make(core.ColumnNames, 0, len(cols))
@@ -79,7 +79,7 @@ func (db *Database) CreateTable(tableName string, cols core.Cols) error {
 // GetTable gets table from DB
 func (db *Database) GetTable(tableName string) (Table, error) {
 	if _, ok := db.Tables[tableName]; !ok {
-		return nil, ErrTableNotFound
+		return nil, fmt.Errorf(`ERROR:  relation "%v" does not exist`, tableName)
 	}
 
 	tb := db.Tables[tableName]
@@ -92,7 +92,7 @@ func (db *Database) DropTable(tableName string) error {
 		delete(db.Tables, tableName)
 		return nil
 	}
-	return ErrTableNotFound
+	return fmt.Errorf(`ERROR: relation "%v" does not exist`, tableName)
 }
 
 // DBRow is struct of row of table
