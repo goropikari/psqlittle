@@ -63,7 +63,7 @@ func handleConnection(c net.Conn, db backend.DB, path string) {
 		res, err := handleQuery(db, query)
 		if err != nil {
 			fmt.Println(err)
-			c.Write(ACCEPT_MSG)
+			c.Write(makeCommandCompleteMsg(err.Error()))
 			c.Write(QUERY_READY)
 			continue
 		}
@@ -75,6 +75,47 @@ func handleConnection(c net.Conn, db backend.DB, path string) {
 			sendResult(c, res)
 		}
 	}
+}
+
+func startup(c net.Conn) error {
+	// https://www.pgcon.org/2014/schedule/attachments/330_postgres-for-the-wire.pdf
+	// https://www.postgresql.org/docs/12/protocol-message-formats.html
+	sizeByte, err := read(c, PAYLOAD_BYTES_LENGTH)
+	if err != nil {
+		return err
+	}
+	c.Write([]byte{0x4e})
+
+	size := int(binary.BigEndian.Uint32(sizeByte))
+	if _, err := read(c, size-PAYLOAD_BYTES_LENGTH); err != nil {
+		return err
+	}
+	// AuthenticationOk
+	// 0x52 -> Z
+	c.Write([]byte{0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00})
+	// fake client encoding
+	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x19, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00, 0x55, 0x54, 0x46, 0x38, 0x00})
+	// fake server version
+	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x18, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x31, 0x32, 0x2e, 0x36, 0x00})
+	// ReadyForQuery
+	c.Write(QUERY_READY)
+
+	return nil
+}
+
+func makeCommandCompleteMsg(s string) []byte {
+	body := make([]byte, 0)
+	body = append(body, []byte(s)...)
+	body = append(body, 0x00)
+	l := len(body)
+	lb := make([]byte, 4)
+	binary.BigEndian.PutUint32(lb, uint32(l+PAYLOAD_BYTES_LENGTH))
+	payload := make([]byte, 0)
+	payload = append(payload, 0x43)
+	payload = append(payload, lb...)
+	payload = append(payload, body...)
+
+	return payload
 }
 
 func sendResult(c net.Conn, res trans.Result) {
@@ -220,32 +261,6 @@ func readQuery(c net.Conn) (byte, string, error) {
 
 func parseSize(bs []byte) int {
 	return int(binary.BigEndian.Uint32(bs))
-}
-
-func startup(c net.Conn) error {
-	// https://www.pgcon.org/2014/schedule/attachments/330_postgres-for-the-wire.pdf
-	// https://www.postgresql.org/docs/12/protocol-message-formats.html
-	sizeByte, err := read(c, PAYLOAD_BYTES_LENGTH)
-	if err != nil {
-		return err
-	}
-	c.Write([]byte{0x4e})
-
-	size := int(binary.BigEndian.Uint32(sizeByte))
-	if _, err := read(c, size-PAYLOAD_BYTES_LENGTH); err != nil {
-		return err
-	}
-	// AuthenticationOk
-	// 0x52 -> Z
-	c.Write([]byte{0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00})
-	// fake client encoding
-	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x19, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00, 0x55, 0x54, 0x46, 0x38, 0x00})
-	// fake server version
-	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x18, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x31, 0x32, 0x2e, 0x36, 0x00})
-	// ReadyForQuery
-	c.Write(QUERY_READY)
-
-	return nil
 }
 
 func read(c net.Conn, n int) ([]byte, error) {
