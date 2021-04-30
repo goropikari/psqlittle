@@ -101,6 +101,27 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
+			name:  "simple where: multiple and",
+			query: "select hoge.name from hoge where hoge.id = hoge.id and hoge.id = hoge.id and hoge.name = 'hanako'",
+			expected: &trans.QueryResult{
+				Columns: []string{"name"},
+				Records: core.ValuesList{
+					{"hanako"},
+				},
+			},
+		},
+		{
+			name:  "simple where: multiple or",
+			query: "select hoge.name from hoge where hoge.name = 'hanako' or hoge.name = 'hanako' or hoge.name = 'mike'",
+			expected: &trans.QueryResult{
+				Columns: []string{"name"},
+				Records: core.ValuesList{
+					{"hanako"},
+					{"mike"},
+				},
+			},
+		},
+		{
 			name:  "cross join",
 			query: "select * from hoge, piyo",
 			expected: &trans.QueryResult{

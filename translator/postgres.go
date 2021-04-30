@@ -569,18 +569,55 @@ func constructBoolExprNode(node *pg_query.BoolExpr) ExpressionNode {
 	opType := node.GetBoolop()
 	switch opType {
 	case 1: // AND
-		return &ANDNode{
-			Lexpr: constructExprNode(node.GetArgs()[0]),
-			Rexpr: constructExprNode(node.GetArgs()[1]),
-		}
+		return constructANDExpr(node.GetArgs())
 	case 2: // OR
-		return &ORNode{
-			Lexpr: constructExprNode(node.GetArgs()[0]),
-			Rexpr: constructExprNode(node.GetArgs()[1]),
-		}
+		return constructORExpr(node.GetArgs())
 	}
 
 	return nil
+}
+
+func constructANDExpr(nodes []*pg_query.Node) ExpressionNode {
+	expr := &ANDNode{
+		Lexpr: constructExprNode(nodes[0]),
+		Rexpr: constructExprNode(nodes[1]),
+	}
+
+	if len(nodes) == 2 {
+		return expr
+	}
+
+	N := len(nodes)
+	for i := 2; i < N; i++ {
+		expr = &ANDNode{
+			Lexpr: expr,
+			Rexpr: constructExprNode(nodes[i]),
+		}
+	}
+
+	return expr
+}
+
+func constructORExpr(nodes []*pg_query.Node) ExpressionNode {
+	expr := &ORNode{
+		Lexpr: constructExprNode(nodes[0]),
+		Rexpr: constructExprNode(nodes[1]),
+	}
+
+	if len(nodes) == 2 {
+		return expr
+	}
+
+	N := len(nodes)
+	for i := 2; i < N; i++ {
+		fmt.Println("hogehogehoge")
+		expr = &ORNode{
+			Lexpr: expr,
+			Rexpr: constructExprNode(nodes[i]),
+		}
+	}
+
+	return expr
 }
 
 func constructColumnRef(node *pg_query.ColumnRef) ExpressionNode {
