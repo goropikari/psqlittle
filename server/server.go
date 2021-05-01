@@ -25,9 +25,10 @@ const (
 var dbmsPORT = getEnvWithDefault("DBMS_PORT", "5432")
 var dbmsHOST = getEnvWithDefault("DBMS_HOST", "127.0.0.1")
 var dataPath = getEnvWithDefault("DBMS_DATA_PATH", "data.db")
-var QUERY_READY []byte = []byte{0x5a, 0x00, 0x00, 0x00, 0x05, 0x49}
-var ACCEPT_MSG []byte = []byte{0x43, 0x00, 0x00, 0x00, 0x7, 0x4f, 0x4b, 0x00}
+var queryReady []byte = []byte{0x5a, 0x00, 0x00, 0x00, 0x05, 0x49}
+var acceptMsg []byte = []byte{0x43, 0x00, 0x00, 0x00, 0x7, 0x4f, 0x4b, 0x00}
 
+// Run starts DBMS server
 func Run() {
 	db, path := setupDB()
 	ln, err := net.Listen("tcp", dbmsHOST+":"+dbmsPORT)
@@ -59,18 +60,21 @@ func handleConnection(c net.Conn, db backend.DB, path string) {
 			break
 		}
 		if tag == 0x58 {
+			// 0x58 -> X: terminate
 			return
 		}
 		res, err := handleQuery(db, query)
 		if err != nil {
 			fmt.Println(err)
+			// Ideally, error msg should be sent if errors occur
 			c.Write(makeCommandCompleteMsg(err.Error()))
-			c.Write(QUERY_READY)
+			c.Write(queryReady)
 			continue
 		}
 		if res == nil {
-			c.Write(ACCEPT_MSG)
-			c.Write(QUERY_READY)
+			// Query except for SELECT
+			c.Write(acceptMsg)
+			c.Write(queryReady)
 			writeLog(path, query)
 		} else {
 			sendResult(c, res)
@@ -92,14 +96,15 @@ func startup(c net.Conn) error {
 		return err
 	}
 	// AuthenticationOk
-	// 0x52 -> Z
+	// 0x52 -> Z: ReadyForQuery
 	c.Write([]byte{0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00})
-	// fake client encoding for python postgres connector
+	// fake client encoding for python PostgreSQL connector
 	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x19, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00, 0x55, 0x54, 0x46, 0x38, 0x00})
 	// // fake server version
 	// c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x18, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x31, 0x32, 0x2e, 0x36, 0x00})
+
 	// ReadyForQuery
-	c.Write(QUERY_READY)
+	c.Write(queryReady)
 
 	return nil
 }
@@ -112,7 +117,7 @@ func makeCommandCompleteMsg(s string) []byte {
 	lb := make([]byte, payloadBytesLength)
 	binary.BigEndian.PutUint32(lb, uint32(l+payloadBytesLength))
 	payload := make([]byte, 0)
-	payload = append(payload, 0x43)
+	payload = append(payload, 0x43) // 0x43 -> C: CommandComplete
 	payload = append(payload, lb...)
 	payload = append(payload, body...)
 
@@ -130,7 +135,7 @@ func sendResult(c net.Conn, res trans.Result) {
 	}
 
 	c.Write(selectFooter(len(recs)))
-	c.Write(QUERY_READY)
+	c.Write(queryReady)
 }
 
 func selectFooter(n int) []byte {
@@ -170,22 +175,13 @@ func makeDataRow(rec core.Values) []byte {
 	}
 
 	payload := make([]byte, 0)
-	payload = append(payload, 0x44) // 0x44 -> D
+	payload = append(payload, 0x44) // 0x44 -> D: DataRow
 	lenByte := make([]byte, payloadBytesLength)
 	binary.BigEndian.PutUint32(lenByte, uint32(len(dataRow)+payloadBytesLength))
 	payload = append(payload, lenByte...)
 	payload = append(payload, dataRow...)
 
 	return payload
-}
-
-func makeDataRows(recs core.ValuesList) []byte {
-	dataRows := make([]byte, 0)
-	for _, rec := range recs {
-		dataRows = append(dataRows, makeDataRow(rec)...)
-	}
-
-	return dataRows
 }
 
 func makeColDesc(cols []string) []byte {
@@ -211,11 +207,20 @@ func makeColDesc(cols []string) []byte {
 	length := make([]byte, payloadBytesLength)
 	binary.BigEndian.PutUint32(length, uint32(len(payload)+payloadBytesLength))
 	packet := make([]byte, 0)
-	packet = append(packet, 0x54) // 0x54 -> T
+	packet = append(packet, 0x54) // 0x54 -> T: RowDescription
 	packet = append(packet, length[:]...)
 	packet = append(packet, payload[:]...)
 
 	return packet
+}
+
+func makeDataRows(recs core.ValuesList) []byte {
+	dataRows := make([]byte, 0)
+	for _, rec := range recs {
+		dataRows = append(dataRows, makeDataRow(rec)...)
+	}
+
+	return dataRows
 }
 
 func handleQuery(db backend.DB, query string) (trans.Result, error) {
