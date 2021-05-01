@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	backend "github.com/goropikari/mysqlite2/backend"
-	core "github.com/goropikari/mysqlite2/core"
+	backend "github.com/goropikari/psqlittle/backend"
+	core "github.com/goropikari/psqlittle/core"
 )
 
 // MockDB is a mock of DB interface.

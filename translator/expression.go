@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/goropikari/mysqlite2/backend"
-	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/psqlittle/backend"
+	"github.com/goropikari/psqlittle/core"
 )
 
 //go:generate mockgen -source=$GOFILE -destination=mock/mock_$GOFILE -package=mock

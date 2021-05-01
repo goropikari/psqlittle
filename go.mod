@@ -1,4 +1,4 @@
-module github.com/goropikari/mysqlite2
+module github.com/goropikari/psqlittle
 
 go 1.16
 

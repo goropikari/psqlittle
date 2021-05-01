@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goropikari/mysqlite2/backend"
-	"github.com/goropikari/mysqlite2/core"
-	trans "github.com/goropikari/mysqlite2/translator"
+	"github.com/goropikari/psqlittle/backend"
+	"github.com/goropikari/psqlittle/core"
+	trans "github.com/goropikari/psqlittle/translator"
 	"github.com/stretchr/testify/assert"
 )
 

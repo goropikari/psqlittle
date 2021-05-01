@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/goropikari/mysqlite2/backend"
-	"github.com/goropikari/mysqlite2/backend/mock"
-	"github.com/goropikari/mysqlite2/core"
-	"github.com/goropikari/mysqlite2/testing/fake"
-	trans "github.com/goropikari/mysqlite2/translator"
+	"github.com/goropikari/psqlittle/backend"
+	"github.com/goropikari/psqlittle/backend/mock"
+	"github.com/goropikari/psqlittle/core"
+	"github.com/goropikari/psqlittle/testing/fake"
+	trans "github.com/goropikari/psqlittle/translator"
 	"github.com/stretchr/testify/assert"
 )
 

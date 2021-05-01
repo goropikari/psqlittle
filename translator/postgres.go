@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/goropikari/mysqlite2/backend"
-	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/psqlittle/backend"
+	"github.com/goropikari/psqlittle/core"
 	pg_query "github.com/pganalyze/pg_query_go/v2"
 )
 

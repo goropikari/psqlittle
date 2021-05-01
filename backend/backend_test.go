@@ -3,7 +3,7 @@ package backend
 import (
 	"testing"
 
-	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/psqlittle/core"
 	"github.com/stretchr/testify/assert"
 )
 

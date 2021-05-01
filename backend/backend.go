@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/psqlittle/core"
 )
 
 // DB is interface of DBMS

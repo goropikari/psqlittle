@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/goropikari/mysqlite2/server"
+	"github.com/goropikari/psqlittle/server"
 )
 
 func main() {

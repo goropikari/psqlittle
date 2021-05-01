@@ -3,7 +3,7 @@ package fake
 import (
 	"math/rand"
 
-	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/psqlittle/core"
 )
 
 // ColName generates fake ColName

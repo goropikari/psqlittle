@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/goropikari/mysqlite2/backend"
-	trans "github.com/goropikari/mysqlite2/translator"
+	"github.com/goropikari/psqlittle/backend"
+	trans "github.com/goropikari/psqlittle/translator"
 )
 
 func main() {

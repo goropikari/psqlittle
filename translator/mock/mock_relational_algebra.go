@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	backend "github.com/goropikari/mysqlite2/backend"
+	backend "github.com/goropikari/psqlittle/backend"
 )
 
 // MockRelationalAlgebraNode is a mock of RelationalAlgebraNode interface.

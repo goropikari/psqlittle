@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/goropikari/mysqlite2/backend"
-	"github.com/goropikari/mysqlite2/core"
+	"github.com/goropikari/psqlittle/backend"
+	"github.com/goropikari/psqlittle/core"
 )
 
 // RelationalAlgebraNode is interface of RelationalAlgebraNode

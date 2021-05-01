@@ -1,6 +1,6 @@
 build:
-	go build -o bin/repl repl/main.go
-	go build -o bin/server main.go
+	go build -o bin/repl cmd/repl/main.go
+	go build -o bin/server cmd/server/main.go
 
 test: mockgen
 	go test -v $(shell go list ./...)
