@@ -17,25 +17,26 @@ import (
 )
 
 const (
-	PORT                 = "5432"
-	PAYLOAD_BYTES_LENGTH = 4
-	TAG_LENGTH           = 1
-	BUFFER_SIZE          = 1024
+	payloadBytesLength = 4
+	tagLength          = 1
+	bufferSize         = 1024
 )
 
-var HOST = getEnvWithDefault("DBMS_HOST", "127.0.0.1")
+var dbmsPORT = getEnvWithDefault("DBMS_PORT", "5432")
+var dbmsHOST = getEnvWithDefault("DBMS_HOST", "127.0.0.1")
+var dataPath = getEnvWithDefault("DBMS_DATA_PATH", "data.db")
 var QUERY_READY []byte = []byte{0x5a, 0x00, 0x00, 0x00, 0x05, 0x49}
 var ACCEPT_MSG []byte = []byte{0x43, 0x00, 0x00, 0x00, 0x7, 0x4f, 0x4b, 0x00}
 
 func Run() {
 	db, path := setupDB()
-	ln, err := net.Listen("tcp", HOST+":"+PORT)
+	ln, err := net.Listen("tcp", dbmsHOST+":"+dbmsPORT)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	defer ln.Close()
-	for i := 0; i < 10; i++ {
+	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			fmt.Println(err)
@@ -80,23 +81,23 @@ func handleConnection(c net.Conn, db backend.DB, path string) {
 func startup(c net.Conn) error {
 	// https://www.pgcon.org/2014/schedule/attachments/330_postgres-for-the-wire.pdf
 	// https://www.postgresql.org/docs/12/protocol-message-formats.html
-	sizeByte, err := read(c, PAYLOAD_BYTES_LENGTH)
+	sizeByte, err := read(c, payloadBytesLength)
 	if err != nil {
 		return err
 	}
 	c.Write([]byte{0x4e})
 
 	size := int(binary.BigEndian.Uint32(sizeByte))
-	if _, err := read(c, size-PAYLOAD_BYTES_LENGTH); err != nil {
+	if _, err := read(c, size-payloadBytesLength); err != nil {
 		return err
 	}
 	// AuthenticationOk
 	// 0x52 -> Z
 	c.Write([]byte{0x52, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00})
-	// fake client encoding
+	// fake client encoding for python postgres connector
 	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x19, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x5f, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00, 0x55, 0x54, 0x46, 0x38, 0x00})
-	// fake server version
-	c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x18, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x31, 0x32, 0x2e, 0x36, 0x00})
+	// // fake server version
+	// c.Write([]byte{0x53, 0x00, 0x00, 0x00, 0x18, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x31, 0x32, 0x2e, 0x36, 0x00})
 	// ReadyForQuery
 	c.Write(QUERY_READY)
 
@@ -108,8 +109,8 @@ func makeCommandCompleteMsg(s string) []byte {
 	body = append(body, []byte(s)...)
 	body = append(body, 0x00)
 	l := len(body)
-	lb := make([]byte, 4)
-	binary.BigEndian.PutUint32(lb, uint32(l+PAYLOAD_BYTES_LENGTH))
+	lb := make([]byte, payloadBytesLength)
+	binary.BigEndian.PutUint32(lb, uint32(l+payloadBytesLength))
 	payload := make([]byte, 0)
 	payload = append(payload, 0x43)
 	payload = append(payload, lb...)
@@ -140,8 +141,8 @@ func selectFooter(n int) []byte {
 
 	payload := make([]byte, 0)
 	payload = append(payload, 0x43)
-	lenBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(lenBytes, uint32(len(body)+4))
+	lenBytes := make([]byte, payloadBytesLength)
+	binary.BigEndian.PutUint32(lenBytes, uint32(len(body)+payloadBytesLength))
 	payload = append(payload, lenBytes...)
 	payload = append(payload, body...)
 
@@ -161,7 +162,7 @@ func makeDataRow(rec core.Values) []byte {
 			s := fmt.Sprintf("%v", val)
 			sb := []byte(s)
 			slen := len(sb)
-			lenByte := make([]byte, 4)
+			lenByte := make([]byte, payloadBytesLength)
 			binary.BigEndian.PutUint32(lenByte, uint32(slen))
 			dataRow = append(dataRow, lenByte[:]...)
 			dataRow = append(dataRow, sb[:]...)
@@ -170,8 +171,8 @@ func makeDataRow(rec core.Values) []byte {
 
 	payload := make([]byte, 0)
 	payload = append(payload, 0x44) // 0x44 -> D
-	lenByte := make([]byte, 4)
-	binary.BigEndian.PutUint32(lenByte, uint32(len(dataRow)+4))
+	lenByte := make([]byte, payloadBytesLength)
+	binary.BigEndian.PutUint32(lenByte, uint32(len(dataRow)+payloadBytesLength))
 	payload = append(payload, lenByte...)
 	payload = append(payload, dataRow...)
 
@@ -207,8 +208,8 @@ func makeColDesc(cols []string) []byte {
 		payload = append(payload, []byte{0x00, 0x00}...)             // format code
 	}
 
-	length := make([]byte, 4)
-	binary.BigEndian.PutUint32(length, uint32(len(payload)+4))
+	length := make([]byte, payloadBytesLength)
+	binary.BigEndian.PutUint32(length, uint32(len(payload)+payloadBytesLength))
 	packet := make([]byte, 0)
 	packet = append(packet, 0x54) // 0x54 -> T
 	packet = append(packet, length[:]...)
@@ -232,7 +233,7 @@ func handleQuery(db backend.DB, query string) (trans.Result, error) {
 
 func readQuery(c net.Conn) (byte, string, error) {
 	data := make([]byte, 0)
-	buf := make([]byte, BUFFER_SIZE)
+	buf := make([]byte, bufferSize)
 	for {
 		n, err := c.Read(buf)
 		if err != nil {
@@ -242,7 +243,7 @@ func readQuery(c net.Conn) (byte, string, error) {
 			}
 			break
 		}
-		if n < BUFFER_SIZE {
+		if n < bufferSize {
 			data = append(data, buf[:n]...)
 			break
 		}
@@ -289,7 +290,7 @@ func writeLog(path, query string) {
 }
 
 func setupDB() (backend.DB, string) {
-	path := getEnvWithDefault("DB_DATA_PATH", "data.db")
+	path := dataPath
 
 	db := backend.NewDatabase()
 
