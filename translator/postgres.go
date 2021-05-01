@@ -339,11 +339,9 @@ func interpreteUpdateTargetList(targetList []*pg_query.Node) (core.ColumnNames, 
 	names := make(core.ColumnNames, 0, len(targetList))
 	resExprs := make([]ExpressionNode, 0, len(targetList))
 	for _, target := range targetList {
-		tableName := strings.ToLower(target.GetResTarget().GetName())
-		colName := strings.ToLower(target.GetResTarget().GetIndirection()[0].GetString_().GetStr())
+		colName := strings.ToLower(target.GetResTarget().GetName())
 		val := constructExprNode(target.GetResTarget().GetVal())
-
-		names = append(names, core.ColumnName{TableName: tableName, Name: colName})
+		names = append(names, core.ColumnName{Name: colName})
 		resExprs = append(resExprs, val)
 	}
 
@@ -610,7 +608,6 @@ func constructORExpr(nodes []*pg_query.Node) ExpressionNode {
 
 	N := len(nodes)
 	for i := 2; i < N; i++ {
-		fmt.Println("hogehogehoge")
 		expr = &ORNode{
 			Lexpr: expr,
 			Rexpr: constructExprNode(nodes[i]),

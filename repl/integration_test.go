@@ -327,7 +327,7 @@ func TestUpdateQuery(t *testing.T) {
 	}{
 		{
 			name:        "update",
-			updateQuery: "update hoge set hoge.name = 'taro jr' where hoge.name = 'taro'",
+			updateQuery: "update hoge set name = 'taro jr' where hoge.name = 'taro'",
 			selectQuery: "select * from hoge",
 			expected: &trans.QueryResult{
 				Columns: []string{"id", "cid", "name"},

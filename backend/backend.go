@@ -133,7 +133,7 @@ func (r *DBRow) GetColNames() core.ColumnNames {
 // UpdateValue updates value by specifing column name
 func (r *DBRow) UpdateValue(name core.ColumnName, val core.Value) {
 	for k, colName := range r.ColNames {
-		if colName == name {
+		if colName.Name == name.Name {
 			r.Values[k] = val
 		}
 	}
