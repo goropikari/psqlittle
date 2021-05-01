@@ -1,10 +1,17 @@
-FROM golang:1.16
+FROM golang:1.16.3-buster AS builder
 
-ENV DBMS_HOST 0.0.0.0
 WORKDIR /app
 COPY . /app/
 
 RUN go mod tidy
-RUN make && cp ./bin/* /usr/bin/ && rm -rf /app
+RUN make
 
-CMD /usr/bin/server
+FROM debian:buster-slim
+ENV DBMS_HOST 0.0.0.0
+WORKDIR /root/
+COPY --from=builder /app/bin/repl /bin/
+COPY --from=builder /app/bin/server /bin/
+
+EXPOSE 5432
+
+CMD /bin/server

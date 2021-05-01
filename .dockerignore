@@ -1,2 +1,9 @@
 Dockerfile
 README.md
+bin
+data.db
+ex.sql
+memo.md
+memo.txt
+pglast_parse_tree.ipynb
+protocol
